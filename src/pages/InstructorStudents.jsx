@@ -29,29 +29,21 @@ export default function InstructorStudents() {
 
   // Effect to load students based on selectedCondoId and instructor
   useEffect(() => {
-    const loadStudents = async () => {
+    const fetchInstructorStudents = async () => {
       setIsLoading(true);
       try {
-        // **CORREÇÃO**: Primeiro, busca o instrutor e os condomínios.
-        const [currentUser, condos, studentsFromApi] = await Promise.all([
+        // Busca o usuário atual e os condomínios em paralelo
+        const [currentUser, condos] = await Promise.all([
           User.me(),
-          Condominium.list(),
-          User.listMyStudents() // **CORREÇÃO**: Usa a rota específica /instructor/students
+          Condominium.list()
         ]);
         setInstructor(currentUser);
         setCondominiums(condos);
 
+        // **CORREÇÃO**: Faz uma chamada direta para a API buscar os alunos do instrutor
+        const studentsFromApi = await User.request('get', '/instructor/students');
 
-        // Agora, busca os alunos com base no filtro
-        let studentsQuery = [];
-        
-        if (initialCondoId === 'all') {
-          studentsQuery = await User.filter({ user_type: "student" });
-        } else {
-          studentsQuery = studentsFromApi;
-        }
-
-        // Process data for the fetched students to include workout counts and last assessment
+        // Processa os dados dos alunos para incluir contagens de treinos e avaliações
         const studentsWithData = await Promise.all(
           studentsFromApi.map(async (student) => {
             try {
@@ -59,7 +51,6 @@ export default function InstructorStudents() {
                 Workout.filter({ student_id: student.id }),
                 PhysicalAssessment.filter({ student_id: student.id })
               ]);
-
               return {
                 ...student,
                 workoutCount: workouts.length,
@@ -67,7 +58,7 @@ export default function InstructorStudents() {
                   assessments.sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date))[0] : null
               };
             } catch (error) {
-              console.error('Erro ao carregar dados do aluno:', student.id, error);
+              console.error(`Erro ao carregar dados para o aluno ${student.id}:`, error);
               return {
                 ...student,
                 workoutCount: 0,
@@ -76,13 +67,14 @@ export default function InstructorStudents() {
             }
           })
         );
-
+        
         setAllStudents(studentsWithData); // `allStudents` agora são os alunos do instrutor
 
         // Define o filtro inicial do condomínio
         const initialCondoId = currentUser.condominium_id || 'all';
         setSelectedCondoId(initialCondoId);
 
+        // Filtra e define os alunos a serem exibidos inicialmente
         setStudents(studentsWithData.filter(s => initialCondoId === 'all' || s.condominium_id === initialCondoId)); // Set the displayed students
       } catch (error) {
         console.error('Erro ao carregar alunos:', error);
@@ -91,8 +83,8 @@ export default function InstructorStudents() {
       }
     };
 
-    loadStudents();
-  }, []); // Executa apenas uma vez no carregamento inicial
+    fetchInstructorStudents();
+  }, []);
 
   // Handles changing the selected condominium filter
   const handleCondoFilter = (condoId) => {
