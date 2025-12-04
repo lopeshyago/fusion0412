@@ -97,24 +97,6 @@ const AdminDashboard = () => {
             <Card className="glass-effect fusion-shadow hover:shadow-2xl transition-all duration-300 border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-orange-600">
-                  <GraduationCap className="w-6 h-6" />
-                  Equipe
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">Instrutores e permissões</p>
-                <Button
-                  className="w-full fusion-gradient text-white shadow-lg hover:shadow-xl transition-all"
-                  onClick={() => navigateTo("AdminTeam")}
-                >
-                  Ver Equipe
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-effect fusion-shadow hover:shadow-2xl transition-all duration-300 border-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-orange-600">
                   <Bell className="w-6 h-6" />
                   Avisos e Comunicados
                 </CardTitle>
@@ -192,6 +174,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-
-
