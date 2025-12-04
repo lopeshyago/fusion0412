@@ -33,20 +33,14 @@ export default function InstructorStudents() {
       setIsLoading(true);
       try {
         // **CORREÇÃO**: Primeiro, busca o instrutor e os condomínios.
-        const [currentUser, condos, allUsers] = await Promise.all([
+        const [currentUser, condos, studentsFromApi] = await Promise.all([
           User.me(),
           Condominium.list(),
-          User.list() // Busca todos os usuários para contagem e fallback
+          User.listMyStudents() // **CORREÇÃO**: Usa a rota específica /instructor/students
         ]);
         setInstructor(currentUser);
         setCondominiums(condos);
 
-        const studentUsers = allUsers.filter(u => u.user_type === "student" || (!u.user_type && u.email));
-        setAllStudents(studentUsers);
-
-        // Define o filtro inicial do condomínio
-        const initialCondoId = currentUser.condominium_id || 'all';
-        setSelectedCondoId(initialCondoId);
 
         // Agora, busca os alunos com base no filtro
         let studentsQuery = [];
@@ -54,15 +48,12 @@ export default function InstructorStudents() {
         if (initialCondoId === 'all') {
           studentsQuery = await User.filter({ user_type: "student" });
         } else {
-          studentsQuery = await User.filter({
-            user_type: "student",
-            condominium_id: initialCondoId
-          });
+          studentsQuery = studentsFromApi;
         }
 
         // Process data for the fetched students to include workout counts and last assessment
         const studentsWithData = await Promise.all(
-          studentsQuery.map(async (student) => {
+          studentsFromApi.map(async (student) => {
             try {
               const [workouts, assessments] = await Promise.all([
                 Workout.filter({ student_id: student.id }),
@@ -85,7 +76,14 @@ export default function InstructorStudents() {
             }
           })
         );
-        setStudents(studentsWithData); // Set the displayed students
+
+        setAllStudents(studentsWithData); // `allStudents` agora são os alunos do instrutor
+
+        // Define o filtro inicial do condomínio
+        const initialCondoId = currentUser.condominium_id || 'all';
+        setSelectedCondoId(initialCondoId);
+
+        setStudents(studentsWithData.filter(s => initialCondoId === 'all' || s.condominium_id === initialCondoId)); // Set the displayed students
       } catch (error) {
         console.error('Erro ao carregar alunos:', error);
       } finally {
