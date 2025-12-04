@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, Plus, Calculator, UserCheck, Wrench, Bell } from "lucide-react";
+import { GraduationCap, Plus, Calculator, UserCheck, Wrench, Bell, LogOut } from "lucide-react";
 import InstructorBottomNavBar from "../components/instructor/InstructorBottomNavBar";
 import { useOptimizedNavigation } from "../components/common/NavigationHelper";
 
@@ -46,7 +46,8 @@ const InstructorDashboard = () => {
             <img src={logoUrl} alt="Fusion Logo" className="h-10 w-auto" />
             <span className="text-xl font-bold text-white">Painel do Instrutor</span>
           </div>
-          <Button onClick={handleLogout} variant="ghost" className="text-white hover:bg-white/20">
+          <Button onClick={handleLogout} variant="ghost" className="text-white hover:bg-white/20 flex items-center gap-2">
+            <LogOut className="h-4 w-4" />
             Sair
           </Button>
         </div>

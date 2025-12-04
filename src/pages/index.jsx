@@ -33,7 +33,6 @@ import StudentLogin from "./StudentLogin";
 import AdminDashboard from "./AdminDashboard";
 import StudentDashboard from "./StudentDashboard";
 import AdminProfile from "./AdminProfile";
-import InstructorDashboard from "./InstructorDashboard";
 
 import InstructorWorkouts from "./InstructorWorkouts";
 
@@ -119,8 +118,6 @@ const PAGES = {
     AdminProfile: AdminProfile,
 
     StudentDashboard: StudentDashboard,
-
-    InstructorDashboard: InstructorDashboard,
 
     InstructorWorkouts: InstructorWorkouts,
     
@@ -227,8 +224,6 @@ function PagesContent() {
                 <Route path="/AdminDashboard" element={<AdminDashboard />} />`r`n                <Route path="/AdminProfile" element={<AdminProfile />} />
 
                 <Route path="/StudentDashboard" element={<StudentDashboard />} />
-
-                <Route path="/InstructorDashboard" element={<InstructorDashboard />} />
 
                 <Route path="/InstructorWorkouts" element={<InstructorWorkouts />} />
                 

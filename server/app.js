@@ -316,7 +316,7 @@ app.get('/instructor/students', authMiddleware, async (req, res) => {
   try {
     const me = await getSql('SELECT condominium_id FROM users WHERE id = ?', [req.user.id]);
     if (!me || !me.condominium_id) return res.json([]);
-    const rows = await allSql('SELECT u.id, u.email, u.phone, u.cpf, p.full_name, p.avatar_url, p.sex FROM users u JOIN profiles p ON u.id = p.user_id WHERE u.user_type = ? AND u.condominium_id = ? ORDER BY p.full_name ASC', ['student', me.condominium_id]);
+    const rows = await allSql('SELECT u.id, u.email, u.phone, u.cpf, p.full_name, p.avatar_url, p.sex FROM users u LEFT JOIN profiles p ON u.id = p.user_id WHERE u.user_type = ? AND u.condominium_id = ? ORDER BY p.full_name ASC', ['student', me.condominium_id]);
     res.json(rows);
   } catch (e) { console.error(e); res.status(500).json({ error: 'failed' }); }
 });
