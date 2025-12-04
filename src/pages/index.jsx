@@ -16,6 +16,8 @@ import StudentDetail from "./StudentDetail";
 
 import AdminCondominiums from "./AdminCondominiums";
 
+import AdminTeam from "./AdminTeam";
+
 import AdminReports from "./AdminReports";
 
 import StudentWorkouts from "./StudentWorkouts";
@@ -33,6 +35,7 @@ import StudentLogin from "./StudentLogin";
 import AdminDashboard from "./AdminDashboard";
 import StudentDashboard from "./StudentDashboard";
 import AdminProfile from "./AdminProfile";
+import InstructorDashboard from "./InstructorDashboard";
 
 import InstructorWorkouts from "./InstructorWorkouts";
 
@@ -96,6 +99,8 @@ const PAGES = {
     
     AdminCondominiums: AdminCondominiums,
     
+    AdminTeam: AdminTeam,
+    
     AdminReports: AdminReports,
     
     StudentWorkouts: StudentWorkouts,
@@ -118,6 +123,8 @@ const PAGES = {
     AdminProfile: AdminProfile,
 
     StudentDashboard: StudentDashboard,
+
+    InstructorDashboard: InstructorDashboard,
 
     InstructorWorkouts: InstructorWorkouts,
     
@@ -203,6 +210,8 @@ function PagesContent() {
                 
                 <Route path="/AdminCondominiums" element={<AdminCondominiums />} />
                 
+                <Route path="/AdminTeam" element={<AdminTeam />} />
+                
                 <Route path="/AdminReports" element={<AdminReports />} />
                 
                 <Route path="/StudentWorkouts" element={<StudentWorkouts />} />
@@ -224,6 +233,8 @@ function PagesContent() {
                 <Route path="/AdminDashboard" element={<AdminDashboard />} />`r`n                <Route path="/AdminProfile" element={<AdminProfile />} />
 
                 <Route path="/StudentDashboard" element={<StudentDashboard />} />
+
+                <Route path="/instructordashboard" element={<InstructorDashboard />} />
 
                 <Route path="/InstructorWorkouts" element={<InstructorWorkouts />} />
                 
