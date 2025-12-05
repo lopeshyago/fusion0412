@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  ArrowLeft, FileText, Activity, Calendar, 
+  ArrowLeft, FileText, Activity, Calendar, Edit, Trash2,
   TrendingUp, Weight, Ruler, Target, Clock, RotateCcw, Dumbbell,
   CheckCircle, Download, AlertTriangle, // Existing imports for medical certificate
   User, Calculator, MessageCircle, BarChart2 // New imports for profile header
@@ -18,6 +18,7 @@ import { User as UserEntity } from "@/api/entities_new"; // Renamed User to User
 import { Workout } from "@/api/entities_new";
 import { PhysicalAssessment } from "@/api/entities_new";
 import WorkoutBuilderForm from "../components/instructor/WorkoutBuilderForm";
+import DetailedAssessmentForm from "../components/assessment/DetailedAssessmentForm";
 
 export default function StudentDetail() {
   const [student, setStudent] = useState(null);
@@ -26,6 +27,8 @@ export default function StudentDetail() {
   const [instructor, setInstructor] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
+  const [isEditingAssessment, setIsEditingAssessment] = useState(false);
+  const [editingAssessment, setEditingAssessment] = useState(null);
   const [editingWorkout, setEditingWorkout] = useState(null);
 
   const location = useLocation();
@@ -81,6 +84,24 @@ export default function StudentDetail() {
     await loadStudentData(); // Recarregar os dados
     setIsEditingWorkout(false);
     setEditingWorkout(null);
+  };
+
+  const handleEditAssessment = (assessment) => {
+    setEditingAssessment(assessment);
+    setIsEditingAssessment(true);
+  };
+
+  const handleAssessmentSave = async () => {
+    await loadStudentData();
+    setIsEditingAssessment(false);
+    setEditingAssessment(null);
+  };
+
+  const handleDeleteAssessment = async (assessmentId) => {
+    if (confirm('Tem certeza que deseja excluir esta avaliação? Esta ação é irreversível.')) {
+      await PhysicalAssessment.delete(assessmentId);
+      await loadStudentData();
+    }
   };
 
   if (isLoading) {
@@ -464,64 +485,63 @@ export default function StudentDetail() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-4">
-                {assessments.map((assessment, index) => (
-                  <Card key={assessment.id} className="border-orange-200">
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">
-                          Avaliação - {new Date(assessment.assessment_date).toLocaleDateString('pt-BR')}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {assessments.map((assessment) => (
+                  <Card key={assessment.id} className="border-orange-200 flex flex-col">
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-base font-bold text-gray-800">
+                          Avaliação de {new Date(assessment.assessment_date).toLocaleDateString('pt-BR')}
                         </CardTitle>
-                        <div className="flex items-center gap-2">
-                          {index === 0 && (
-                            <Badge className="bg-green-100 text-green-800">Mais Recente</Badge>
-                          )}
-                          <div className="text-sm text-gray-500 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(assessment.created_date).toLocaleDateString('pt-BR')}
-                          </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditAssessment(assessment)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600" onClick={() => handleDeleteAssessment(assessment.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <h4 className="font-semibold mb-2 text-blue-700">Dados Gerais</h4>
-                          <div className="space-y-1 text-sm bg-blue-50 p-3 rounded-lg">
-                            <p><strong>Peso:</strong> {assessment.weight}kg</p>
-                            <p><strong>Altura:</strong> {assessment.height}cm</p>
-                            {assessment.body_fat && <p><strong>Gordura:</strong> {assessment.body_fat}%</p>}
-                            {assessment.muscle_mass && <p><strong>Massa Muscular:</strong> {assessment.muscle_mass}kg</p>}
-                          </div>
-                        </div>
+                    <CardContent className="flex-1 flex flex-col justify-between">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div className="font-medium text-gray-500">Peso:</div>
+                        <div className="text-gray-800 font-semibold">{assessment.weight || '--'} kg</div>
                         
-                        {assessment.measurements && (
-                          <div>
-                            <h4 className="font-semibold mb-2 text-green-700">Medidas</h4>
-                            <div className="space-y-1 text-sm bg-green-50 p-3 rounded-lg">
-                              {assessment.measurements.chest && <p><strong>Peito:</strong> {assessment.measurements.chest}cm</p>}
-                              {assessment.measurements.waist && <p><strong>Cintura:</strong> {assessment.measurements.waist}cm</p>}
-                              {assessment.measurements.hip && <p><strong>Quadril:</strong> {assessment.measurements.hip}cm</p>}
-                              {assessment.measurements.arm && <p><strong>Braço:</strong> {assessment.measurements.arm}cm</p>}
-                              {assessment.measurements.thigh && <p><strong>Coxa:</strong> {assessment.measurements.thigh}cm</p>}
-                            </div>
+                        <div className="font-medium text-gray-500">Altura:</div>
+                        <div className="text-gray-800">{assessment.height || '--'} cm</div>
+                        
+                        <div className="font-medium text-gray-500">Gordura Corporal:</div>
+                        <div className="text-gray-800">{assessment.body_fat ? `${assessment.body_fat}%` : '--'}</div>
+                        
+                        <div className="font-medium text-gray-500">Massa Muscular:</div>
+                        <div className="text-gray-800">{assessment.muscle_mass ? `${assessment.muscle_mass} kg` : '--'}</div>
+                        
+                        {assessment.measurements?.chest && (
+                          <>
+                            <div className="font-medium text-gray-500">Peito:</div>
+                            <div className="text-gray-800">{assessment.measurements.chest} cm</div>
+                          </>
+                        )}
+                        {assessment.measurements?.waist && (
+                          <>
+                            <div className="font-medium text-gray-500">Cintura:</div>
+                            <div className="text-gray-800">{assessment.measurements.waist} cm</div>
+                          </>
+                        )}
+                      </div>
+                      {assessment.notes && (
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs text-gray-600">
+                            <span className="font-semibold">Obs:</span> {assessment.notes}
+                          </p>
+                        </div>
+                      )}
+                      {assessment.next_assessment && (
+                          <div className="mt-2 text-xs text-orange-600 font-medium">
+                            Próxima avaliação: {new Date(assessment.next_assessment).toLocaleDateString('pt-BR')}
                           </div>
                         )}
-                        
-                        <div>
-                          <h4 className="font-semibold mb-2 text-orange-700">Observações</h4>
-                          <div className="text-sm bg-orange-50 p-3 rounded-lg">
-                            <p className="text-gray-700">
-                              {assessment.notes || 'Nenhuma observação registrada.'}
-                            </p>
-                            {assessment.next_assessment && (
-                              <p className="text-orange-600 mt-2 font-medium">
-                                <strong>Próxima:</strong> {new Date(assessment.next_assessment).toLocaleDateString('pt-BR')}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -541,8 +561,16 @@ export default function StudentDetail() {
           templates={[]} // Não precisamos de templates neste contexto
           onSave={handleWorkoutSave}
         />
+
+        <DetailedAssessmentForm
+          isOpen={isEditingAssessment}
+          onOpenChange={setIsEditingAssessment}
+          assessmentToEdit={editingAssessment}
+          studentId={studentId}
+          instructorId={instructor?.id}
+          onSave={handleAssessmentSave}
+        />
       </div>
     </div>
   );
 }
-

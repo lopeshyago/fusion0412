@@ -57,11 +57,20 @@ export default function InstructorWorkouts() {
     setIsLoading(false);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (workoutData) => {
+    try {
+      if (editingWorkout) {
+        await Workout.update(editingWorkout.id, workoutData);
+      } else {
+        await Workout.create(workoutData);
+      }
+    } catch (error) {
+      console.error('Erro ao salvar treino:', error);
+      alert('Não foi possível salvar o treino. Tente novamente.');
+    }
     await loadData();
     setIsFormOpen(false);
     setEditingWorkout(null);
-    setSelectedStudent(null);
   };
 
   const handleCreateForStudent = (student) => {
