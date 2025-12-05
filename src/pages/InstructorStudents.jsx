@@ -9,6 +9,7 @@ import { Users, Search, Plus, FileText, Activity, Calendar, ChevronRight, ArrowL
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import { createPageUrl } from '@/utils';
+import { localApi } from "@/api/localApi"; // Importação adicionada
 import { User } from "@/api/entities_new";
 import { Workout } from "@/api/entities_new";
 import { PhysicalAssessment } from "@/api/entities_new";
@@ -41,7 +42,7 @@ export default function InstructorStudents() {
         setCondominiums(condos);
 
         // **CORREÇÃO**: Faz uma chamada direta para a API buscar os alunos do instrutor
-        const studentsFromApi = await User.request('get', '/instructor/students');
+        const studentsFromApi = await localApi.request('/instructor/students');
 
         // Processa os dados dos alunos para incluir contagens de treinos e avaliações
         const studentsWithData = await Promise.all(
