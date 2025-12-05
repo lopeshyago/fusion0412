@@ -72,11 +72,11 @@ export default function InstructorStudents() {
         setAllStudents(studentsWithData); // `allStudents` agora são os alunos do instrutor
 
         // Define o filtro inicial do condomínio
-        const initialCondoId = currentUser.condominium_id || 'all';
+        const initialCondoId = 'all'; // **CORREÇÃO**: Sempre começa mostrando todos os alunos
         setSelectedCondoId(initialCondoId);
 
         // Filtra e define os alunos a serem exibidos inicialmente
-        setStudents(studentsWithData.filter(s => initialCondoId === 'all' || s.condominium_id === initialCondoId)); // Set the displayed students
+        setStudents(studentsWithData); // **CORREÇÃO**: Mostra todos os alunos inicialmente
       } catch (error) {
         console.error('Erro ao carregar alunos:', error);
       } finally {
@@ -89,8 +89,13 @@ export default function InstructorStudents() {
 
   // Handles changing the selected condominium filter
   const handleCondoFilter = (condoId) => {
-    setSelectedCondoId(condoId);
-    // Student list will be updated by the useEffect for loadStudents
+    setSelectedCondoId(condoId); // Atualiza o estado do seletor
+    if (condoId === 'all') {
+      setStudents(allStudents); // Mostra todos
+    } else {
+      // Filtra a lista principal de alunos com base no ID do condomínio selecionado
+      setStudents(allStudents.filter(s => s.condominium_id === condoId));
+    }
   };
 
   // Filters the currently displayed students based on search term and CPF
