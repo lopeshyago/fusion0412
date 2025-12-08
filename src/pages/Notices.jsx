@@ -4,8 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Bell, AlertCircle, Info, PartyPopper, Edit, Trash2 } from "lucide-react";
-import { Notice } from "@/api/entities_new";
-import { User } from "@/api/entities_new";
+import { Notice, User } from "@/api/entities_new";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import NoticeForm from "../components/notices/NoticeForm";
@@ -29,6 +28,19 @@ const getNoticeColors = (type) => {
     celebration: "bg-green-100 text-green-800 border-green-200"
   };
   return colors[type] || colors.info;
+};
+
+const parseCondoIds = (raw) => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {}
+    return raw.split(',').map(c => c.trim()).filter(Boolean);
+  }
+  return [];
 };
 
 export default function Notices() {
@@ -55,8 +67,11 @@ export default function Notices() {
         }
         return true;
       });
-
-      setNotices(activeNotices);
+      const normalized = activeNotices.map(n => ({
+        ...n,
+        condominium_ids: parseCondoIds(n.condominium_ids)
+      }));
+      setNotices(normalized);
       setUser(currentUser);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -86,8 +101,18 @@ export default function Notices() {
     }
   };
 
+  const isAdmin = user?.user_type === 'admin';
   const isTeacher = user?.user_type === 'admin' || user?.user_type === 'instructor';
   const isStudent = user?.user_type === 'student';
+
+  const filteredNotices = notices.filter((notice) => {
+    if (isAdmin) return true;
+    const condos = notice.condominium_ids || [];
+    const appliesToAll = condos.length === 0;
+    if (appliesToAll) return true;
+    if (!user?.condominium_id) return false;
+    return condos.includes(user.condominium_id);
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100">
@@ -122,7 +147,7 @@ export default function Notices() {
           </div>
         ) : (
           <div className="space-y-6">
-            {notices.map((notice) => {
+            {filteredNotices.map((notice) => {
               const IconComponent = getNoticeIcon(notice.type);
               const colorClasses = getNoticeColors(notice.type);
               
@@ -153,7 +178,7 @@ export default function Notices() {
                         </div>
                       </div>
                       
-                      {isTeacher && notice.created_by === user?.email && (
+                      {(isAdmin || notice.created_by === user?.email) && (
                         <div className="flex items-center gap-1 self-end sm:self-start">
                           <Button variant="ghost" size="sm" onClick={() => handleEdit(notice)}>
                             <Edit className="h-4 w-4" />

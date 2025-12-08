@@ -12,7 +12,7 @@ import { Calendar as CalendarIcon, Save } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { Notice } from "@/api/entities_new";
+import { Notice, Condominium } from "@/api/entities_new";
 
 export default function NoticeForm({ isOpen, onOpenChange, notice, onSave }) {
   const [formData, setFormData] = useState({
@@ -20,13 +20,41 @@ export default function NoticeForm({ isOpen, onOpenChange, notice, onSave }) {
     content: '',
     type: 'info',
     target_audience: 'all',
-    is_active: true
+    is_active: true,
+    condominium_ids: []
   });
   const [validUntilDate, setValidUntilDate] = useState(null);
+  const [condominiums, setCondominiums] = useState([]);
+  const [allCondos, setAllCondos] = useState(true);
 
   useEffect(() => {
+    const loadCondos = async () => {
+      try {
+        const list = await Condominium.list();
+        setCondominiums(list || []);
+      } catch (e) {
+        console.error("Erro ao carregar condomínios:", e);
+      }
+    };
+    if (isOpen) loadCondos();
+
     if (notice) {
-      setFormData(notice);
+      const parsedCondoIds = Array.isArray(notice.condominium_ids)
+        ? notice.condominium_ids
+        : (() => {
+            if (!notice.condominium_ids) return [];
+            if (typeof notice.condominium_ids === "string") {
+              try {
+                const arr = JSON.parse(notice.condominium_ids);
+                return Array.isArray(arr) ? arr : [];
+              } catch {
+                return notice.condominium_ids.split(',').map(c => c.trim()).filter(Boolean);
+              }
+            }
+            return [];
+          })();
+      setFormData({ ...notice, condominium_ids: parsedCondoIds });
+      setAllCondos(!parsedCondoIds || parsedCondoIds.length === 0);
       setValidUntilDate(notice.valid_until ? new Date(notice.valid_until) : null);
     } else {
       setFormData({
@@ -34,9 +62,11 @@ export default function NoticeForm({ isOpen, onOpenChange, notice, onSave }) {
         content: '',
         type: 'info',
         target_audience: 'all',
-        is_active: true
+        is_active: true,
+        condominium_ids: []
       });
       setValidUntilDate(null);
+      setAllCondos(true);
     }
   }, [notice, isOpen]);
 
@@ -47,7 +77,8 @@ export default function NoticeForm({ isOpen, onOpenChange, notice, onSave }) {
   const handleSave = async () => {
     const dataToSave = { 
       ...formData, 
-      valid_until: validUntilDate ? format(validUntilDate, "yyyy-MM-dd") : null 
+      valid_until: validUntilDate ? format(validUntilDate, "yyyy-MM-dd") : null,
+      condominium_ids: allCondos ? JSON.stringify([]) : JSON.stringify(formData.condominium_ids || [])
     };
     
     if (notice && notice.id) {
@@ -140,6 +171,46 @@ export default function NoticeForm({ isOpen, onOpenChange, notice, onSave }) {
                 />
               </PopoverContent>
             </Popover>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Condomínios</Label>
+            <div className="flex items-center space-x-2 mb-2">
+              <Checkbox 
+                id="all_condos"
+                checked={allCondos}
+                onCheckedChange={(checked) => {
+                  const isAll = Boolean(checked);
+                  setAllCondos(isAll);
+                  if (isAll) setFormData(prev => ({ ...prev, condominium_ids: [] }));
+                }}
+              />
+              <Label htmlFor="all_condos">Todos os condomínios</Label>
+            </div>
+            {!allCondos && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border rounded-md p-2">
+                {condominiums.map((c) => {
+                  const selected = formData.condominium_ids?.includes(c.id);
+                  return (
+                    <label key={c.id} className="flex items-center space-x-2 text-sm">
+                      <Checkbox
+                        checked={selected}
+                        onCheckedChange={(checked) => {
+                          setFormData(prev => {
+                            const current = prev.condominium_ids || [];
+                            const next = checked
+                              ? [...current, c.id]
+                              : current.filter(id => id !== c.id);
+                            return { ...prev, condominium_ids: next };
+                          });
+                        }}
+                      />
+                      <span>{c.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center space-x-2">
