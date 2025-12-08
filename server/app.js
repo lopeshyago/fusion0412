@@ -86,6 +86,12 @@ async function ensureSchemaColumns() {
     if (!uNames.has('medical_certificate_required_date')) await runSql('ALTER TABLE users ADD COLUMN medical_certificate_required_date TEXT');
     if (!uNames.has('condominium_id')) await runSql('ALTER TABLE users ADD COLUMN condominium_id INTEGER');
     if (!uNames.has('account_blocked')) await runSql('ALTER TABLE users ADD COLUMN account_blocked INTEGER DEFAULT 0');
+    if (!uNames.has('block')) await runSql('ALTER TABLE users ADD COLUMN block TEXT');
+    if (!uNames.has('apartment')) await runSql('ALTER TABLE users ADD COLUMN apartment TEXT');
+    if (!uNames.has('guardian_name')) await runSql('ALTER TABLE users ADD COLUMN guardian_name TEXT');
+    if (!uNames.has('guardian_contact')) await runSql('ALTER TABLE users ADD COLUMN guardian_contact TEXT');
+    if (!uNames.has('doctor_name')) await runSql('ALTER TABLE users ADD COLUMN doctor_name TEXT');
+    if (!uNames.has('doctor_crm')) await runSql('ALTER TABLE users ADD COLUMN doctor_crm TEXT');
 
     // condominiums extras
     const cCols = await allSql('PRAGMA table_info(condominiums)');
@@ -185,12 +191,12 @@ ensureSchemaColumns();
 // Admin create user
 app.post('/admin/users', authMiddleware, async (req, res) => {
   try {
-    const { email, full_name, phone, user_type, condominium_id, cpf } = req.body || {};
+    const { email, full_name, phone, user_type, condominium_id, cpf, date_of_birth, block, apartment } = req.body || {};
     if (!email) return res.status(400).json({ error: 'email required' });
     const hashed = bcrypt.hashSync('123456', 10);
     const r = await runSql(
-      'INSERT INTO users (email, password_hash, user_type, phone, cpf, condominium_id) VALUES (?,?,?,?,?,?)',
-      [email, hashed, user_type || 'student', phone || null, cpf || null, condominium_id || null]
+      'INSERT INTO users (email, password_hash, user_type, phone, cpf, condominium_id, date_of_birth, block, apartment) VALUES (?,?,?,?,?,?,?,?,?)',
+      [email, hashed, user_type || 'student', phone || null, cpf || null, condominium_id || null, date_of_birth || null, block || null, apartment || null]
     ); // Adicionado 'cpf'
     const userId = r.lastID;
     await runSql('INSERT INTO profiles (user_id, full_name, role) VALUES (?,?,?)', [userId, full_name || null, (user_type === 'admin' ? 'admin' : (user_type === 'instructor' ? 'instrutor' : 'aluno'))]);
@@ -227,12 +233,13 @@ app.post('/auth/register', async (req, res) => {
 // Student/Instructor registration
 app.post('/register/student', async (req, res) => {
   try {
-    const { email, password, full_name, condo_code } = req.body || {};
+    const { email, password, full_name, condo_code, date_of_birth, guardian_name, guardian_contact, doctor_name, doctor_crm } = req.body || {};
     if (!email || !password || !condo_code) return res.status(400).json({ error: 'Missing fields' });
     const condo = await getSql('SELECT id FROM condominiums WHERE invite_code = ?', [condo_code]);
     if (!condo) return res.status(400).json({ error: 'Invalid condominium code' });
     const hashed = bcrypt.hashSync(password, 10);
-    const r = await runSql('INSERT INTO users (email, password_hash, user_type, condominium_id) VALUES (?,?,?,?)', [email, hashed, 'student', condo.id]);
+    const r = await runSql('INSERT INTO users (email, password_hash, user_type, condominium_id, date_of_birth, guardian_name, guardian_contact, doctor_name, doctor_crm) VALUES (?,?,?,?,?,?,?,?,?)', 
+      [email, hashed, 'student', condo.id, date_of_birth, guardian_name, guardian_contact, doctor_name, doctor_crm]);
     const userId = r.lastID;
     await runSql('INSERT INTO profiles (user_id, full_name, role) VALUES (?,?,?)', [userId, full_name || null, 'aluno']);
     const token = generateToken({ id: userId, email, role: 'aluno', user_type: 'student' });
@@ -242,12 +249,13 @@ app.post('/register/student', async (req, res) => {
 
 app.post('/register/instructor', async (req, res) => {
   try {
-    const { email, password, full_name, invite_code } = req.body || {};
+    const { email, password, full_name, invite_code, date_of_birth } = req.body || {};
     if (!email || !password || !invite_code) return res.status(400).json({ error: 'Missing fields' });
     const invite = await getSql('SELECT id, status FROM instructor_invites WHERE code = ?', [invite_code]);
     if (!invite || invite.status !== 'pending') return res.status(400).json({ error: 'Invalid or used invite' });
     const hashed = bcrypt.hashSync(password, 10);
-    const r = await runSql('INSERT INTO users (email, password_hash, user_type) VALUES (?,?,?)', [email, hashed, 'instructor']);
+    const r = await runSql('INSERT INTO users (email, password_hash, user_type, date_of_birth) VALUES (?,?,?,?)', 
+      [email, hashed, 'instructor', date_of_birth]);
     const userId = r.lastID;
     await runSql('INSERT INTO profiles (user_id, full_name, role) VALUES (?,?,?)', [userId, full_name || null, 'instrutor']);
     await runSql('UPDATE instructor_invites SET status = ? WHERE id = ?', ['used', invite.id]);
@@ -393,7 +401,7 @@ app.post('/api/:table', authMiddleware, async (req, res) => {
 app.put('/api/:table/:id', authMiddleware, async (req, res) => {
   try {
     const table = req.params.table;
-    const id = req.params.id;
+    const { id } = req.params;
     const data = req.body || {};
 
     if (table === 'users') {
@@ -453,10 +461,10 @@ app.post('/api/maintenance_requests', authMiddleware, upload.single('image'), as
 app.put('/api/notices/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, type, target_audience, is_active, valid_until } = req.body;
+    const { title, content, type, target_audience, is_active, valid_until, condominium_ids } = req.body;
     await runSql(
-      'UPDATE notices SET title = ?, content = ?, type = ?, target_audience = ?, is_active = ?, valid_until = ? WHERE id = ?',
-      [title, content, type, target_audience, is_active, valid_until, id]
+      'UPDATE notices SET title = ?, content = ?, type = ?, target_audience = ?, is_active = ?, valid_until = ?, condominium_ids = ? WHERE id = ?',
+      [title, content, type, target_audience, is_active, valid_until, JSON.stringify(condominium_ids), id]
     );
     res.json({ success: true });
   } catch (e) {
@@ -496,7 +504,7 @@ app.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
 
 app.get('/me', authMiddleware, async (req, res) => {
   const row = await getSql('SELECT u.id,u.email,u.user_type,u.phone,u.cpf,u.address,u.condominium_id,p.full_name,p.avatar_url,p.role,p.sex FROM users u LEFT JOIN profiles p ON p.user_id=u.id WHERE u.id=?', [req.user.id]);
-  res.json({ user: row });
+  res.json(row);
 });
 
 // Update current user profile
@@ -504,7 +512,7 @@ app.put('/profile', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const data = req.body || {};
-    const userAllowed = ['user_type','cpf','phone','plan_status','address','par_q_completed','par_q_has_risk','medical_certificate_url','medical_certificate_required_date','condominium_id','account_blocked'];
+    const userAllowed = ['user_type','cpf','phone','plan_status','address','par_q_completed','par_q_has_risk','medical_certificate_url','medical_certificate_required_date','condominium_id','account_blocked', 'date_of_birth', 'block', 'apartment', 'guardian_name', 'guardian_contact', 'doctor_name', 'doctor_crm'];
     const profileAllowed = ['full_name','avatar_url','role','sex'];
     const userUpdates = Object.fromEntries(Object.entries(data).filter(([k]) => userAllowed.includes(k)));
     const profileUpdates = Object.fromEntries(Object.entries(data).filter(([k]) => profileAllowed.includes(k)));

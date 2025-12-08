@@ -166,12 +166,6 @@ export default function InstructorAttendance() {
             <UserCheck className="h-6 w-6 md:h-8 md:w-8" />
             <h1 className="text-xl md:text-2xl font-bold">Controle de Frequência</h1>
           </div>
-          <Link to={createPageUrl("Index")}>
-            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Voltar</span>
-            </Button>
-          </Link>
         </div>
       </header>
 
