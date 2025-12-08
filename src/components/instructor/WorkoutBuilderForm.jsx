@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -428,6 +428,9 @@ export default function WorkoutBuilderForm({
                   {workout ? "Editar Treino" : "Criar Novo Treino"}
                 </DialogTitle>
               </div>
+              <DialogDescription className="text-sm text-gray-600">
+                Monte o treino, adicione exercícios e escolha se será um modelo ou atribuído a um aluno.
+              </DialogDescription>
               {selectedStudent && (
                 <Badge className="bg-blue-100 text-blue-800">
                   Para: {selectedStudent.full_name}

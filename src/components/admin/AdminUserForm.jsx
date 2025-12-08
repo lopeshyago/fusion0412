@@ -29,6 +29,7 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
       setValue('full_name', user.full_name || '');
       setValue('email', user.email || '');
       setValue('phone', user.phone || '');
+      setValue('cpf', user.cpf || '');
       setValue('date_of_birth', user.date_of_birth || '');
       setValue('block', user.block || '');
       setValue('apartment', user.apartment || '');
@@ -46,6 +47,7 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
         full_name: data.full_name || '',
         email: user ? (user.email || '') : (data.email || ''),
         phone: data.phone || '',
+        cpf: data.cpf || '',
         date_of_birth: data.date_of_birth || null,
         block: data.block || '',
         apartment: data.apartment || '',
@@ -93,6 +95,10 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
           <div>
             <Label htmlFor="phone">Telefone</Label>
             <Input id="phone" {...register('phone')} />
+          </div>
+          <div>
+            <Label htmlFor="cpf">CPF</Label>
+            <Input id="cpf" {...register('cpf')} />
           </div>
           <div>
             <Label htmlFor="date_of_birth">Data de Nascimento</Label>
