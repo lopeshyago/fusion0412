@@ -125,8 +125,8 @@ export default function InstructorAttendance() {
       setCondominiums(allCondos);
 
       // Set initial condo ID
-      const initialCondoId = currentUser.condominium_id && allCondos.some(c => c.id === currentUser.condominium_id) 
-        ? currentUser.condominium_id 
+      const initialCondoId = currentUser?.condominium_id && allCondos.some(c => c.id === currentUser.condominium_id) 
+        ? currentUser.condominium_id
         : allCondos[0]?.id || '';
         
       setSelectedCondoId(initialCondoId);
