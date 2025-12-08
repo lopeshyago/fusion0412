@@ -17,7 +17,6 @@ import {
   ChevronRight, ChevronDown, AlertCircle, CheckCircle2
 } from "lucide-react";
 import ExerciseSelector from './ExerciseSelector';
-import { Workout } from "@/api/entities_new";
 
 export default function WorkoutBuilderForm({ 
   isOpen, onOpenChange, workout, selectedStudent, instructorId, 
@@ -255,24 +254,12 @@ export default function WorkoutBuilderForm({
     }
   };
 
-  const handleSave = async () => {
-    try {
-      const workoutData = {
-        ...formData,
-        instructor_id: instructorId
-      };
-
-      if (workout && workout.id) {
-        await Workout.update(workout.id, workoutData);
-      } else {
-        await Workout.create(workoutData);
-      }
-      
-      onSave();
-    } catch (error) {
-      console.error('Erro ao salvar treino:', error);
-      alert('Erro ao salvar treino. Tente novamente.');
-    }
+  const handleSave = () => {
+    const workoutData = {
+      ...formData,
+      instructor_id: instructorId,
+    };
+    onSave?.(workoutData);
   };
 
   const muscleGroupTemplates = {

@@ -1,4 +1,4 @@
-
+﻿
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,24 @@ export default function InstructorWorkouts() {
         User.filter({ user_type: "student" })
       ]);
 
-      setWorkouts(fetchedWorkouts);
+      const normalizeWorkout = (row) => {
+        let data = {};
+        try {
+          data = typeof row.data === 'string' ? JSON.parse(row.data) : (row.data || {});
+        } catch {
+          data = {};
+        }
+        return {
+          ...data,
+          id: row.id,
+          title: row.title || data.name || 'Treino',
+          name: data.name || row.title || 'Treino',
+          user_id: row.user_id,
+          created_at: row.created_at
+        };
+      };
+
+      setWorkouts(fetchedWorkouts.map(normalizeWorkout));
       setStudents(fetchedStudents);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -57,12 +74,21 @@ export default function InstructorWorkouts() {
     setIsLoading(false);
   };
 
-  const handleSave = async (workoutData) => {
+    const handleSave = async (workoutData) => {
+    if (!workoutData) return;
     try {
+      const payload = {
+        title: workoutData.name || 'Treino',
+        data: JSON.stringify({
+          ...workoutData,
+          name: workoutData.name || 'Treino'
+        }),
+        user_id: instructor?.id || workoutData.instructor_id || null
+      };
       if (editingWorkout) {
-        await Workout.update(editingWorkout.id, workoutData);
+        await Workout.update(editingWorkout.id, payload);
       } else {
-        await Workout.create(workoutData);
+        await Workout.create(payload);
       }
     } catch (error) {
       console.error('Erro ao salvar treino:', error);
@@ -114,7 +140,13 @@ export default function InstructorWorkouts() {
     delete assignedWorkout.updated_date;
     delete assignedWorkout.created_by;
 
-    await Workout.create(assignedWorkout);
+    const payloadAssign = {
+      title: assignedWorkout.name || 'Treino',
+      data: JSON.stringify({ ...assignedWorkout, name: assignedWorkout.name || 'Treino' }),
+      user_id: instructor?.id || assignedWorkout.instructor_id || null
+    };
+
+    await Workout.create(payloadAssign);
     await loadData();
     setIsAssignModalOpen(false);
     setAssigningWorkout(null);
@@ -123,7 +155,7 @@ export default function InstructorWorkouts() {
   const handleCopyWorkout = async (workout) => {
     const copiedWorkout = {
       ...workout,
-      name: `${workout.name} (Cópia)`,
+      name: `${workout.name} (CÃ³pia)`,
       is_template: true,
       student_id: null
     };
@@ -132,18 +164,24 @@ export default function InstructorWorkouts() {
     delete copiedWorkout.updated_date;
     delete copiedWorkout.created_by;
 
-    await Workout.create(copiedWorkout);
+    const payloadCopy = {
+      title: copiedWorkout.name || 'Treino',
+      data: JSON.stringify({ ...copiedWorkout, name: copiedWorkout.name || 'Treino' }),
+      user_id: instructor?.id || copiedWorkout.instructor_id || null
+    };
+
+    await Workout.create(payloadCopy);
     await loadData();
   };
 
   const handleDeleteWorkout = async (workoutId) => {
-    if (confirm('Tem certeza que deseja excluir este treino? Esta ação não pode ser desfeita.')) {
+    if (confirm('Tem certeza que deseja excluir este treino? Esta aÃ§Ã£o nÃ£o pode ser desfeita.')) {
       try {
         await Workout.delete(workoutId);
         await loadData();
       } catch (error) {
         console.error('Erro ao excluir treino:', error);
-        alert('Não foi possível excluir o treino.');
+        alert('NÃ£o foi possÃ­vel excluir o treino.');
       }
     }
   };
@@ -188,7 +226,7 @@ export default function InstructorWorkouts() {
 
   const getStudentName = (studentId) => {
     const student = students.find(s => s.id === studentId);
-    return student ? student.full_name : "Aluno não encontrado";
+    return student ? student.full_name : "Aluno nÃ£o encontrado";
   };
 
   return (
@@ -197,7 +235,7 @@ export default function InstructorWorkouts() {
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Activity className="h-6 w-6 md:h-8 md:w-8" />
-            <h1 className="text-xl md:text-2xl font-bold">Gestão de Treinos</h1>
+            <h1 className="text-xl md:text-2xl font-bold">GestÃ£o de Treinos</h1>
           </div>
         </div>
       </header>
@@ -256,7 +294,7 @@ export default function InstructorWorkouts() {
               <div className="text-center py-12">
                 <Users className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                  {searchTerm || cpfSearch ? "Nenhum aluno encontrado" : "Nenhum aluno disponível"}
+                  {searchTerm || cpfSearch ? "Nenhum aluno encontrado" : "Nenhum aluno disponÃ­vel"}
                 </h3>
               </div>
             ) : (
@@ -287,7 +325,7 @@ export default function InstructorWorkouts() {
                               )}
                               <div className="flex items-center gap-2 mt-2 flex-wrap">
                                 <Badge className={getObjectiveColor(student.objectives)}>
-                                  {student.objectives || "Objetivo não definido"}
+                                  {student.objectives || "Objetivo nÃ£o definido"}
                                 </Badge>
                                 <Badge variant="outline">
                                   {studentWorkouts.length} treino{studentWorkouts.length !== 1 ? 's' : ''}
@@ -350,9 +388,9 @@ export default function InstructorWorkouts() {
                 <Dumbbell className="h-16 w-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhum treino encontrado</h3>
                 <p className="text-gray-500">
-                  {workoutView === 'templates' ? 'Crie seu primeiro template reutilizável.' : 
+                  {workoutView === 'templates' ? 'Crie seu primeiro template reutilizÃ¡vel.' : 
                    workoutView === 'personalized' ? 'Atribua treinos para seus alunos.' :
-                   'Crie treinos para seus alunos ou templates reutilizáveis.'
+                   'Crie treinos para seus alunos ou templates reutilizÃ¡veis.'
                   }
                 </p>
               </div>
@@ -384,7 +422,7 @@ export default function InstructorWorkouts() {
                              )}
                             <span className="flex items-center gap-1">
                               <Dumbbell className="h-3 w-3" />
-                              {workout.exercises?.length || 0} exercícios
+                              {workout.exercises?.length || 0} exercÃ­cios
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -462,3 +500,5 @@ export default function InstructorWorkouts() {
     </div>
   );
 }
+
+
