@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, Plus, Calculator, UserCheck, Wrench, Bell, LogOut } from "lucide-react";
+import { GraduationCap, Plus, Calculator, UserCheck, Wrench, Bell, LogOut, UserPlus } from "lucide-react";
 import InstructorBottomNavBar from "../components/instructor/InstructorBottomNavBar";
 import { useOptimizedNavigation } from "../components/common/NavigationHelper";
 
@@ -109,6 +109,23 @@ const InstructorDashboard = () => {
                   onClick={() => navigateTo("InstructorStudents")}
                 >
                   Ver Alunos
+                </Button>
+              </CardContent>
+            </Card>
+            <Card className="glass-effect fusion-shadow hover:shadow-2xl transition-all duration-300 border-0">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-orange-600">
+                  <UserPlus className="w-6 h-6" />
+                  Cadastrar Aluno
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 mb-4">Crie rapidamente o acesso do aluno</p>
+                <Button
+                  className="w-full fusion-gradient text-white shadow-lg hover:shadow-xl transition-all"
+                  onClick={() => navigateTo("StudentRegistration")}
+                >
+                  Novo Aluno
                 </Button>
               </CardContent>
             </Card>
