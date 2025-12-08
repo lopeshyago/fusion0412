@@ -87,45 +87,6 @@ export default function StudentRegistration() {
             <img src={logoUrl} alt="Fusion Logo" className="h-10 w-auto" />
             <span className="text-xl font-bold text-white">Cadastro de Aluno</span>
           </div>
-              <div className="space-y-1">
-                <Label>Data de Nascimento</Label>
-                <Input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} className="border-orange-200" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>Bloco</Label>
-                  <Input value={block} onChange={e => setBlock(e.target.value)} className="border-orange-200" />
-                </div>
-                <div className="space-y-1">
-                  <Label>Apartamento</Label>
-                  <Input value={apartment} onChange={e => setApartment(e.target.value)} className="border-orange-200" />
-                </div>
-              </div>
-              {isMinor && (
-                <div className="space-y-3 rounded-lg border border-orange-200 p-3">
-                  <p className="text-sm font-semibold text-orange-700">Dados do Responsável / Médico (obrigatório para menores)</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label>Nome do Responsável</Label>
-                      <Input value={guardianName} onChange={e => setGuardianName(e.target.value)} className="border-orange-200" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Contato do Responsável</Label>
-                      <Input value={guardianContact} onChange={e => setGuardianContact(e.target.value)} className="border-orange-200" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label>Médico que liberou</Label>
-                      <Input value={doctorName} onChange={e => setDoctorName(e.target.value)} className="border-orange-200" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>CRM do Médico</Label>
-                      <Input value={doctorCrm} onChange={e => setDoctorCrm(e.target.value)} className="border-orange-200" />
-                    </div>
-                  </div>
-                </div>
-              )}
           <Button variant="ghost" size="sm" onClick={() => navigateTo('Index')} className="text-white hover:bg-white/20">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar ao Menu
