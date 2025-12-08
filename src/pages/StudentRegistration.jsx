@@ -16,6 +16,7 @@ export default function StudentRegistration() {
   const [fullName, setFullName] = useState('');
   const [condoCode, setCondoCode] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [cpf, setCpf] = useState('');
   const [block, setBlock] = useState('');
   const [apartment, setApartment] = useState('');
   const [guardianName, setGuardianName] = useState('');
@@ -39,7 +40,7 @@ export default function StudentRegistration() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!email || !password || !fullName || !condoCode || !dateOfBirth) {
+    if (!email || !password || !fullName || !condoCode || !dateOfBirth || !cpf) {
       setError('Preencha todos os campos obrigatórios.');
       return;
     }
@@ -58,6 +59,7 @@ export default function StudentRegistration() {
           full_name: fullName, 
           condo_code: condoCode,
           date_of_birth: dateOfBirth,
+          cpf,
           block,
           apartment,
           guardian_name: guardianName,
@@ -146,6 +148,14 @@ export default function StudentRegistration() {
                 <Input value={fullName} onChange={e => setFullName(e.target.value)} className="border-orange-200" />
               </div>
               <div className="space-y-1">
+                <Label>CPF</Label>
+                <Input value={cpf} onChange={e => setCpf(e.target.value)} className="border-orange-200" />
+              </div>
+              <div className="space-y-1">
+                <Label>Data de Nascimento</Label>
+                <Input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} className="border-orange-200" />
+              </div>
+              <div className="space-y-1">
                 <Label>E-mail</Label>
                 <Input type="email" value={email} onChange={e => setEmail(e.target.value)} className="border-orange-200" />
               </div>
@@ -153,10 +163,45 @@ export default function StudentRegistration() {
                 <Label>Senha</Label>
                 <Input type="password" value={password} onChange={e => setPassword(e.target.value)} className="border-orange-200" />
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Bloco</Label>
+                  <Input value={block} onChange={e => setBlock(e.target.value)} className="border-orange-200" />
+                </div>
+                <div className="space-y-1">
+                  <Label>Apartamento</Label>
+                  <Input value={apartment} onChange={e => setApartment(e.target.value)} className="border-orange-200" />
+                </div>
+              </div>
               <div className="space-y-1">
                 <Label>Código do Condomínio</Label>
                 <Input value={condoCode} onChange={e => setCondoCode(e.target.value.toUpperCase())} className="border-orange-200 tracking-widest" />
               </div>
+              {isMinor && (
+                <div className="space-y-3 rounded-lg border border-orange-200 p-3">
+                  <p className="text-sm font-semibold text-orange-700">Dados do Responsável / Médico (obrigatório para menores)</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Nome do Responsável</Label>
+                      <Input value={guardianName} onChange={e => setGuardianName(e.target.value)} className="border-orange-200" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Contato do Responsável</Label>
+                      <Input value={guardianContact} onChange={e => setGuardianContact(e.target.value)} className="border-orange-200" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Médico que liberou</Label>
+                      <Input value={doctorName} onChange={e => setDoctorName(e.target.value)} className="border-orange-200" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>CRM do Médico</Label>
+                      <Input value={doctorCrm} onChange={e => setDoctorCrm(e.target.value)} className="border-orange-200" />
+                    </div>
+                  </div>
+                </div>
+              )}
               <Button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600">
                 {loading ? 'Cadastrando...' : 'Cadastrar'}
               </Button>

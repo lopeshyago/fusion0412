@@ -15,6 +15,7 @@ export default function InstructorRegistration() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [cpf, setCpf] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,7 +24,7 @@ export default function InstructorRegistration() {
   };
 
   const handleRegister = async () => {
-    if (!inviteCode.trim() || !email || !password || !fullName || !dateOfBirth) {
+    if (!inviteCode.trim() || !email || !password || !fullName || !dateOfBirth || !cpf) {
       setError("Preencha todos os campos.");
       return;
     }
@@ -33,7 +34,7 @@ export default function InstructorRegistration() {
       const res = await localApi.request("/register/instructor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name: fullName, invite_code: inviteCode.trim(), date_of_birth: dateOfBirth })
+        body: JSON.stringify({ email, password, full_name: fullName, invite_code: inviteCode.trim(), date_of_birth: dateOfBirth, cpf })
       });
       if (res?.token) {
         localApi.setToken(res.token);
@@ -78,6 +79,10 @@ export default function InstructorRegistration() {
             <div className="space-y-2">
               <Label>Nome completo</Label>
               <Input value={fullName} onChange={(e) => setFullName(e.target.value)} className="border-orange-200" />
+            </div>
+            <div className="space-y-2">
+              <Label>CPF</Label>
+              <Input value={cpf} onChange={(e) => setCpf(e.target.value)} className="border-orange-200" />
             </div>
             <div className="space-y-2">
               <Label>E-mail</Label>

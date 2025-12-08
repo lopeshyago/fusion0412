@@ -249,13 +249,13 @@ app.post('/register/student', async (req, res) => {
 
 app.post('/register/instructor', async (req, res) => {
   try {
-    const { email, password, full_name, invite_code, date_of_birth } = req.body || {};
+    const { email, password, full_name, invite_code, date_of_birth, cpf } = req.body || {};
     if (!email || !password || !invite_code) return res.status(400).json({ error: 'Missing fields' });
     const invite = await getSql('SELECT id, status FROM instructor_invites WHERE code = ?', [invite_code]);
     if (!invite || invite.status !== 'pending') return res.status(400).json({ error: 'Invalid or used invite' });
     const hashed = bcrypt.hashSync(password, 10);
-    const r = await runSql('INSERT INTO users (email, password_hash, user_type, date_of_birth) VALUES (?,?,?,?)', 
-      [email, hashed, 'instructor', date_of_birth]);
+    const r = await runSql('INSERT INTO users (email, password_hash, user_type, date_of_birth, cpf) VALUES (?,?,?,?,?)', 
+      [email, hashed, 'instructor', date_of_birth || null, cpf || null]);
     const userId = r.lastID;
     await runSql('INSERT INTO profiles (user_id, full_name, role) VALUES (?,?,?)', [userId, full_name || null, 'instrutor']);
     await runSql('UPDATE instructor_invites SET status = ? WHERE id = ?', ['used', invite.id]);
