@@ -39,9 +39,10 @@ export default function MaintenanceFormModal({ isOpen, onClose, onSave, condomin
       let mediaUrls = [];
       if (files.length > 0) {
         setIsUploading(true);
-        const uploadPromises = files.map(file => UploadFile({ file }));
+        // UploadFile expects the raw File object; backend returns { url, filename } via localApi
+        const uploadPromises = files.map(file => UploadFile(file));
         const uploadResults = await Promise.all(uploadPromises);
-        mediaUrls = uploadResults.map(result => result.file_url);
+        mediaUrls = uploadResults.map(result => result.file_url || result.url);
         setIsUploading(false);
       }
       

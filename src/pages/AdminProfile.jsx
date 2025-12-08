@@ -8,7 +8,7 @@ import { useOptimizedNavigation } from "../components/common/NavigationHelper";
 
 export default function AdminProfile() {
   const { navigateTo } = useOptimizedNavigation();
-  const [form, setForm] = useState({ full_name: '', phone: '', avatar_url: '' });
+  const [form, setForm] = useState({ full_name: '', phone: '', avatar_url: '', cpf: '', address: '', email: '' });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,10 @@ export default function AdminProfile() {
         const initial = {
           full_name: me?.full_name || '',
           phone: me?.phone || '',
-          avatar_url: me?.avatar_url || ''
+          avatar_url: me?.avatar_url || '',
+          cpf: me?.cpf || '',
+          address: me?.address || '',
+          email: me?.email || ''
         };
         setForm(initial);
         setAvatarPreview(initial.avatar_url || '');
@@ -51,8 +54,16 @@ export default function AdminProfile() {
           }
         } catch (e) { console.error('Falha no upload do avatar', e); }
       }
-      await User.updateMyUserData(form);
+      await User.updateMyUserData({
+        full_name: form.full_name,
+        phone: form.phone,
+        cpf: form.cpf,
+        address: form.address,
+        avatar_url: form.avatar_url,
+        email: form.email // only used for display; backend ignores if not allowed
+      });
       setOk('Perfil atualizado com sucesso.');
+      navigateTo('AdminDashboard', {}, true);
     } catch (e) {
       setError('Não foi possível salvar as alterações.');
     } finally {
@@ -95,12 +106,24 @@ export default function AdminProfile() {
             {error && <div className="p-3 bg-red-100 border border-red-200 text-red-700 text-sm">{error}</div>}
             {ok && <div className="p-3 bg-green-100 border border-green-200 text-green-700 text-sm">{ok}</div>}
             <div className="space-y-2">
+              <Label>E-mail</Label>
+              <Input value={form.email} onChange={e => handleChange('email', e.target.value)} className="border-orange-200" />
+            </div>
+            <div className="space-y-2">
               <Label>Nome completo</Label>
               <Input value={form.full_name} onChange={e => handleChange('full_name', e.target.value)} className="border-orange-200" />
             </div>
             <div className="space-y-2">
               <Label>Telefone</Label>
               <Input value={form.phone} onChange={e => handleChange('phone', e.target.value)} className="border-orange-200" />
+            </div>
+            <div className="space-y-2">
+              <Label>CPF</Label>
+              <Input value={form.cpf} onChange={e => handleChange('cpf', e.target.value)} className="border-orange-200" />
+            </div>
+            <div className="space-y-2">
+              <Label>EndereÇõ</Label>
+              <Input value={form.address} onChange={e => handleChange('address', e.target.value)} className="border-orange-200" />
             </div>
             <div className="space-y-2">
               <Label>Foto do Perfil</Label>
