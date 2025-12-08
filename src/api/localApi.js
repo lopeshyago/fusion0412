@@ -73,7 +73,11 @@ class LocalApiClient {
   }
 
   async getCurrentUser() {
-    return this.request('/me');
+    const data = await this.request('/me');
+    // The backend returns the user object directly, but the UI expects `{ user: ... }`
+    // Normalize the shape here to avoid `undefined` user data across the app.
+    if (data && typeof data === 'object' && 'user' in data) return data;
+    return { user: data };
   }
 
   async logout() {
