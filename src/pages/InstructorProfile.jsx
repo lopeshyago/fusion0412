@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,13 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save, User as UserIcon, Phone, MapPin, Image as ImageIcon } from "lucide-react";
-import { createPageUrl } from '@/utils';
-import { User } from "@/api/entities_new";
-import { Condominium } from "@/api/entities_new";
+import { Save, User as UserIcon } from "lucide-react";
+import { createPageUrl } from "@/utils";
+import { User, Condominium } from "@/api/entities_new";
 
 export default function InstructorProfile() {
-  const [user, setUser] = useState(null);
   const [condominiums, setCondominiums] = useState([]);
   const [formData, setFormData] = useState({
     full_name: "",
@@ -20,7 +17,9 @@ export default function InstructorProfile() {
     cpf: "",
     address: "",
     condominium_id: "",
-    sex: ""
+    sex: "",
+    date_of_birth: "",
+    avatar_url: ""
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -28,141 +27,100 @@ export default function InstructorProfile() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState("");
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [currentUser, condos] = await Promise.all([
-        User.me(),
-        Condominium.list()
-      ]);
-      setUser(currentUser);
-      setCondominiums(condos);
-      const initial = {
-        full_name: currentUser.full_name || "",
-        phone: currentUser.phone || "",
-        cpf: currentUser.cpf ? currentUser.cpf.replace(/(\\d{3})(\\d{3})(\\d{3})(\\d{2})/, '$1.$2.$3-$4') : "",
-        address: currentUser.address || "",
-        condominium_id: currentUser.condominium_id || "",
-        sex: currentUser.sex || "",
-        avatar_url: currentUser.avatar_url || ""
-      };
-      setFormData(initial);
-      setAvatarPreview(initial.avatar_url || "");
-    } catch (err) {
-      setError("Não foi possível carregar seus dados.");
-    }
-    setIsLoading(false);
-  };
-
   useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [currentUser, condos] = await Promise.all([User.me(), Condominium.list()]);
+        setCondominiums(condos);
+        const initial = {
+          full_name: currentUser.full_name || "",
+          phone: currentUser.phone || "",
+          cpf: currentUser.cpf
+            ? currentUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
+            : "",
+          address: currentUser.address || "",
+          condominium_id: currentUser.condominium_id || "",
+          sex: currentUser.sex || "",
+          date_of_birth: currentUser.date_of_birth || "",
+          avatar_url: currentUser.avatar_url || ""
+        };
+        setFormData(initial);
+        setAvatarPreview(initial.avatar_url || "");
+      } catch (e) {
+        setError("Não foi possível carregar seus dados.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
     loadData();
   }, []);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
-    if (id === 'cpf') {
-        const cpfValue = value.replace(/\D/g, '');
-        const formattedCpf = cpfValue
-            .replace(/(\d{3})(\d)/, '$1.$2')
-            .replace(/(\d{3})(\d)/, '$1.$2')
-            .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-            .replace(/(-\d{2})\d+?$/, '$1');
-        setFormData(prev => ({ ...prev, [id]: formattedCpf }));
+    if (id === "cpf") {
+      const cpfValue = value.replace(/\D/g, "");
+      const formatted = cpfValue
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+        .replace(/(-\d{2})\d+?$/, "$1");
+      setFormData((prev) => ({ ...prev, [id]: formatted }));
     } else {
-        setFormData(prev => ({ ...prev, [id]: value }));
+      setFormData((prev) => ({ ...prev, [id]: value }));
     }
   };
 
-  const handleSelectChange = (id, value) => {
-    setFormData(prev => ({ ...prev, [id]: value }));
+  const handleSelectChange = (key, value) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Salvar perfil com upload de avatar (preview + envio ao servidor)
-  const handleSaveProfileEnhanced = async () => {
+  const saveProfile = async () => {
     setError("");
     setSuccess("");
-    const { full_name, phone, address, cpf, condominium_id, sex } = formData;
-    if (!full_name || !phone || !address || !cpf || !condominium_id || !sex) {
+    const { full_name, phone, address, cpf, condominium_id, sex, date_of_birth } = formData;
+    if (!full_name || !phone || !address || !cpf || !condominium_id || !sex || !date_of_birth) {
       setError("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
-
-    const cpfNumbers = (cpf || '').replace(/\D/g, '');
+    const cpfNumbers = cpf.replace(/\D/g, "");
     if (cpfNumbers.length !== 11) {
       setError("CPF deve ter 11 dígitos.");
       return;
     }
 
     try {
-      let avatarUrl = formData.avatar_url || '';
+      let avatarUrl = formData.avatar_url || "";
       if (avatarFile) {
         try {
-          const { localApi } = await import('@/api/localApi');
+          const { localApi } = await import("@/api/localApi");
           const up = await localApi.uploadFile(avatarFile);
           if (up?.url) {
             avatarUrl = up.url;
             setAvatarPreview(avatarUrl);
-            setFormData(prev => ({ ...prev, avatar_url: avatarUrl }));
           }
         } catch (e) {
-          console.warn('Falha no upload do avatar. Continuando sem atualizar avatar_url.', e);
+          console.warn("Falha no upload do avatar; mantendo valor anterior.", e);
         }
       }
 
       await User.updateMyUserData({
-        full_name,
-        phone,
-        address,
-        cpf: cpfNumbers,
-        condominium_id,
-        sex,
-        avatar_url: avatarUrl,
-        plan_status: 'active',
-        user_type: 'instructor'
-      });
-      setSuccess("Perfil salvo! Redirecionando para seu painel...");
-      setTimeout(() => {
-        window.location.href = createPageUrl('InstructorDashboard');
-      }, 1500);
-    } catch (err) {
-      setError("Não foi possível salvar os dados. Tente novamente.");
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    setError("");
-    setSuccess("");
-    const { full_name, phone, address, cpf, condominium_id, sex } = formData;
-    if (!full_name || !phone || !address || !cpf || !condominium_id || !sex) {
-      setError("Por favor, preencha todos os campos obrigatórios.");
-      return;
-    }
-    
-    const cpfNumbers = cpf.replace(/\D/g, '');
-    if (cpfNumbers.length !== 11) {
-      setError("CPF deve ter 11 dígitos.");
-      return;
-    }
-
-    try {
-      await User.updateMyUserData({
         ...formData,
         cpf: cpfNumbers,
-        plan_status: 'active',   // Definir como ativo por padrão
-        user_type: 'instructor'  // Garantir que seja instrutor
+        avatar_url: avatarUrl,
+        plan_status: "active",
+        user_type: "instructor"
       });
       setSuccess("Perfil salvo! Redirecionando para seu painel...");
       setTimeout(() => {
-        window.location.href = createPageUrl('InstructorDashboard');
-      }, 1500);
-    } catch (err) {
+        window.location.href = createPageUrl("InstructorDashboard");
+      }, 1200);
+    } catch (e) {
       setError("Não foi possível salvar os dados. Tente novamente.");
     }
   };
 
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
-  }
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 p-4 flex items-center justify-center">
@@ -172,70 +130,98 @@ export default function InstructorProfile() {
             <UserIcon className="h-6 w-6" />
             Complete seu Perfil de Instrutor
           </CardTitle>
-          <CardDescription>
-            Preencha suas informações para ter acesso completo à plataforma.
-          </CardDescription>
+          <CardDescription>Preencha suas informações para ter acesso completo à plataforma.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {error && <p className="text-red-600">{error}</p>}
           {success && <p className="text-green-600">{success}</p>}
-          
+
           <div className="flex items-center justify-center flex-col gap-2">
             {avatarPreview ? (
               <img src={avatarPreview} alt="Prévia do avatar" className="h-24 w-24 rounded-full object-cover border" />
             ) : (
-              <Avatar className="h-24 w-24"><AvatarFallback className="bg-orange-100 text-orange-700 text-2xl">{formData.full_name?.charAt(0) || 'I'}</AvatarFallback></Avatar>
+              <Avatar className="h-24 w-24">
+                <AvatarFallback className="bg-orange-100 text-orange-700 text-2xl">
+                  {formData.full_name?.charAt(0) || "I"}
+                </AvatarFallback>
+              </Avatar>
             )}
             <div className="w-full">
               <Label>Foto do Perfil</Label>
-              <Input type="file" accept="image/*" onChange={e => {
-                const f = e.target.files?.[0] || null;
-                setAvatarFile(f);
-                if (f) {
-                  const url = URL.createObjectURL(f);
-                  setAvatarPreview(url);
-                } else {
-                  setAvatarPreview(formData.avatar_url || '');
-                }
-              }} />
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] || null;
+                  setAvatarFile(f);
+                  if (f) {
+                    setAvatarPreview(URL.createObjectURL(f));
+                  } else {
+                    setAvatarPreview(formData.avatar_url || "");
+                  }
+                }}
+              />
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><Label htmlFor="full_name">Nome Completo *</Label><Input id="full_name" value={formData.full_name} onChange={handleInputChange} /></div>
-            <div><Label htmlFor="cpf">CPF *</Label><Input id="cpf" value={formData.cpf} onChange={handleInputChange} maxLength={14} /></div>
-          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <Label htmlFor="sex">Gênero *</Label>
-                <Select value={formData.sex} onValueChange={(value) => handleSelectChange('sex', value)}>
-                    <SelectTrigger id="sex" className="w-full mt-1">
-                        <SelectValue placeholder="Selecione..."/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="male">Masculino</SelectItem>
-                        <SelectItem value="female">Feminino</SelectItem>
-                    </SelectContent>
-                </Select>
+              <Label htmlFor="full_name">Nome Completo *</Label>
+              <Input id="full_name" value={formData.full_name} onChange={handleInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="cpf">CPF *</Label>
+              <Input id="cpf" value={formData.cpf} onChange={handleInputChange} maxLength={14} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="date_of_birth">Data de Nascimento *</Label>
+              <Input id="date_of_birth" type="date" value={formData.date_of_birth} onChange={handleInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="phone">Telefone/WhatsApp *</Label>
+              <Input id="phone" value={formData.phone} onChange={handleInputChange} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="sex">Gênero *</Label>
+              <Select value={formData.sex} onValueChange={(value) => handleSelectChange("sex", value)}>
+                <SelectTrigger id="sex" className="w-full mt-1">
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Masculino</SelectItem>
+                  <SelectItem value="female">Feminino</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="condominium_id">Selecione seu Condomínio *</Label>
-              <Select value={formData.condominium_id} onValueChange={(value) => handleSelectChange('condominium_id', value)}>
+              <Select value={formData.condominium_id} onValueChange={(value) => handleSelectChange("condominium_id", value)}>
                 <SelectTrigger id="condominium_id" className="w-full mt-1">
                   <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {condominiums.map(condo => (
-                    <SelectItem key={condo.id} value={condo.id}>{condo.name}</SelectItem>
+                  {condominiums.map((condo) => (
+                    <SelectItem key={condo.id} value={condo.id}>
+                      {condo.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <div><Label htmlFor="phone">Telefone/WhatsApp *</Label><Input id="phone" value={formData.phone} onChange={handleInputChange} /></div>
-          <div><Label htmlFor="address">Endereço Completo *</Label><Input id="address" value={formData.address} onChange={handleInputChange} /></div>
-          
-          <Button onClick={handleSaveProfileEnhanced} className="w-full fusion-gradient">
+
+          <div>
+            <Label htmlFor="address">Endereço Completo *</Label>
+            <Input id="address" value={formData.address} onChange={handleInputChange} />
+          </div>
+
+          <Button onClick={saveProfile} className="w-full fusion-gradient">
             <Save className="h-4 w-4 mr-2" />
             Salvar Perfil e Acessar Painel
           </Button>
@@ -244,4 +230,3 @@ export default function InstructorProfile() {
     </div>
   );
 }
-

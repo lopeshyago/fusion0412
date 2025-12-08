@@ -15,13 +15,36 @@ export default function StudentRegistration() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [condoCode, setCondoCode] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [block, setBlock] = useState('');
+  const [apartment, setApartment] = useState('');
+  const [guardianName, setGuardianName] = useState('');
+  const [guardianContact, setGuardianContact] = useState('');
+  const [doctorName, setDoctorName] = useState('');
+  const [doctorCrm, setDoctorCrm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const calculateAge = (dob) => {
+    if (!dob) return null;
+    const birth = new Date(dob + 'T00:00:00');
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  };
+  const age = calculateAge(dateOfBirth);
+  const isMinor = age !== null && age < 18;
+
   const submit = async (e) => {
     e.preventDefault();
-    if (!email || !password || !fullName || !condoCode) {
-      setError('Preencha todos os campos.');
+    if (!email || !password || !fullName || !condoCode || !dateOfBirth) {
+      setError('Preencha todos os campos obrigatórios.');
+      return;
+    }
+    if (isMinor && (!guardianName || !guardianContact || !doctorName || !doctorCrm)) {
+      setError('Para menores de idade, preencha os dados do responsável e do médico.');
       return;
     }
     setLoading(true); setError('');
@@ -29,7 +52,19 @@ export default function StudentRegistration() {
       const res = await localApi.request('/register/student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name: fullName, condo_code: condoCode })
+        body: JSON.stringify({ 
+          email, 
+          password, 
+          full_name: fullName, 
+          condo_code: condoCode,
+          date_of_birth: dateOfBirth,
+          block,
+          apartment,
+          guardian_name: guardianName,
+          guardian_contact: guardianContact,
+          doctor_name: doctorName,
+          doctor_crm: doctorCrm
+        })
       });
       if (res?.token) {
         localApi.setToken(res.token);
@@ -50,6 +85,45 @@ export default function StudentRegistration() {
             <img src={logoUrl} alt="Fusion Logo" className="h-10 w-auto" />
             <span className="text-xl font-bold text-white">Cadastro de Aluno</span>
           </div>
+              <div className="space-y-1">
+                <Label>Data de Nascimento</Label>
+                <Input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} className="border-orange-200" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Bloco</Label>
+                  <Input value={block} onChange={e => setBlock(e.target.value)} className="border-orange-200" />
+                </div>
+                <div className="space-y-1">
+                  <Label>Apartamento</Label>
+                  <Input value={apartment} onChange={e => setApartment(e.target.value)} className="border-orange-200" />
+                </div>
+              </div>
+              {isMinor && (
+                <div className="space-y-3 rounded-lg border border-orange-200 p-3">
+                  <p className="text-sm font-semibold text-orange-700">Dados do Responsável / Médico (obrigatório para menores)</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Nome do Responsável</Label>
+                      <Input value={guardianName} onChange={e => setGuardianName(e.target.value)} className="border-orange-200" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Contato do Responsável</Label>
+                      <Input value={guardianContact} onChange={e => setGuardianContact(e.target.value)} className="border-orange-200" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Médico que liberou</Label>
+                      <Input value={doctorName} onChange={e => setDoctorName(e.target.value)} className="border-orange-200" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>CRM do Médico</Label>
+                      <Input value={doctorCrm} onChange={e => setDoctorCrm(e.target.value)} className="border-orange-200" />
+                    </div>
+                  </div>
+                </div>
+              )}
           <Button variant="ghost" size="sm" onClick={() => navigateTo('Index')} className="text-white hover:bg-white/20">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar ao Menu

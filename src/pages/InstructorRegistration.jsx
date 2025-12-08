@@ -14,6 +14,7 @@ export default function InstructorRegistration() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -22,7 +23,7 @@ export default function InstructorRegistration() {
   };
 
   const handleRegister = async () => {
-    if (!inviteCode.trim() || !email || !password || !fullName) {
+    if (!inviteCode.trim() || !email || !password || !fullName || !dateOfBirth) {
       setError("Preencha todos os campos.");
       return;
     }
@@ -32,7 +33,7 @@ export default function InstructorRegistration() {
       const res = await localApi.request("/register/instructor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name: fullName, invite_code: inviteCode.trim() })
+        body: JSON.stringify({ email, password, full_name: fullName, invite_code: inviteCode.trim(), date_of_birth: dateOfBirth })
       });
       if (res?.token) {
         localApi.setToken(res.token);
@@ -81,6 +82,10 @@ export default function InstructorRegistration() {
             <div className="space-y-2">
               <Label>E-mail</Label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="border-orange-200" />
+            </div>
+            <div className="space-y-2">
+              <Label>Data de Nascimento</Label>
+              <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="border-orange-200" />
             </div>
             <div className="space-y-2">
               <Label>Senha</Label>

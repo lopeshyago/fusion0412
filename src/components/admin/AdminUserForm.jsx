@@ -13,7 +13,6 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
   const [selectedUserType, setSelectedUserType] = useState('student');
 
   useEffect(() => {
-    // Load condominiums once dialog is opened
     const loadCondos = async () => {
       try {
         const list = await Condominium.list();
@@ -22,18 +21,17 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
         console.error('Erro ao carregar condomínios:', e);
       }
     };
-
-    if (isOpen) {
-      loadCondos();
-    }
+    if (isOpen) loadCondos();
   }, [isOpen]);
 
   useEffect(() => {
-    // Prefill form when editing; otherwise reset defaults
     if (user) {
       setValue('full_name', user.full_name || '');
       setValue('email', user.email || '');
       setValue('phone', user.phone || '');
+      setValue('date_of_birth', user.date_of_birth || '');
+      setValue('block', user.block || '');
+      setValue('apartment', user.apartment || '');
       setValue('condominium_id', user.condominium_id != null ? String(user.condominium_id) : '');
       setSelectedUserType(user.user_type || 'student');
     } else {
@@ -48,6 +46,9 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
         full_name: data.full_name || '',
         email: user ? (user.email || '') : (data.email || ''),
         phone: data.phone || '',
+        date_of_birth: data.date_of_birth || null,
+        block: data.block || '',
+        apartment: data.apartment || '',
         user_type: selectedUserType,
         condominium_id: data.condominium_id ? Number(data.condominium_id) : null,
       };
@@ -66,7 +67,7 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
         });
       }
 
-      if (onSave) onSave();
+      onSave?.();
       onOpenChange(false);
     } catch (error) {
       console.error('Erro ao salvar usuário:', error);
@@ -93,6 +94,10 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
             <Label htmlFor="phone">Telefone</Label>
             <Input id="phone" {...register('phone')} />
           </div>
+          <div>
+            <Label htmlFor="date_of_birth">Data de Nascimento</Label>
+            <Input id="date_of_birth" type="date" {...register('date_of_birth')} />
+          </div>
 
           <div>
             <Label htmlFor="user_type">Tipo de Usuário</Label>
@@ -107,6 +112,19 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
               </SelectContent>
             </Select>
           </div>
+
+          {selectedUserType === 'student' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="block">Bloco</Label>
+                <Input id="block" {...register('block')} />
+              </div>
+              <div>
+                <Label htmlFor="apartment">Apartamento</Label>
+                <Input id="apartment" {...register('apartment')} />
+              </div>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="condominium_id">Condomínio</Label>
