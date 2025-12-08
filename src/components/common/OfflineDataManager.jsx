@@ -168,8 +168,12 @@ export const OfflineDataPreloader = ({ children }) => {
     const preloadCriticalData = async () => {
       try {
         // Precarregar dados do usuário
-        const user = await User.me();
-        cache.set(cache.CACHE_KEYS.USER_PROFILE, user, cache.CACHE_DURATION.LONG);
+        // User API may occasionally return undefined; fall back to cached data to avoid crashes
+        const freshUser = await User.me();
+        const user = freshUser || cache.get(cache.CACHE_KEYS.USER_PROFILE) || null;
+        if (user) {
+          cache.set(cache.CACHE_KEYS.USER_PROFILE, user, cache.CACHE_DURATION.LONG);
+        }
 
         // Precarregar atividades
         const activities = await Activity.list();
@@ -180,7 +184,7 @@ export const OfflineDataPreloader = ({ children }) => {
         cache.set(cache.CACHE_KEYS.CONDOMINIUMS, condominiums, cache.CACHE_DURATION.LONG);
 
         // Precarregar horários se usuário tem condomínio
-        if (user.condominium_id) {
+        if (user?.condominium_id) {
           const schedule = await LessonPlan.filter({ condominium_id: user.condominium_id });
           cache.set(`${cache.CACHE_KEYS.SCHEDULE}_${user.condominium_id}`, schedule, cache.CACHE_DURATION.MEDIUM);
         }
@@ -190,7 +194,7 @@ export const OfflineDataPreloader = ({ children }) => {
         cache.set(cache.CACHE_KEYS.NOTICES, notices, cache.CACHE_DURATION.SHORT);
 
         // Precarregar treinos do usuário se for aluno
-        if (user.user_type === 'student') {
+        if (user?.user_type === 'student') {
           const workouts = await Workout.filter({ student_id: user.id });
           cache.set(`${cache.CACHE_KEYS.WORKOUTS}_${user.id}`, workouts, cache.CACHE_DURATION.MEDIUM);
         }
