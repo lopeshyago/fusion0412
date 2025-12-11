@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
   Activity, ArrowLeft, Plus, Search, Copy, Edit, Users,
-  Target, Clock, Dumbbell, User as UserIcon, Send, Trash2
+  Target, Clock, Dumbbell, User as UserIcon, Send, Trash2, X
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from '@/utils';
