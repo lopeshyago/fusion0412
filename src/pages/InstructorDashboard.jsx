@@ -124,7 +124,7 @@ const InstructorDashboard = () => {
                 <p className="text-sm text-gray-600 mb-4">Crie rapidamente o acesso do aluno</p>
                 <Button
                   className="w-full fusion-gradient text-white shadow-lg hover:shadow-xl transition-all"
-                  onClick={() => navigateTo("StudentRegistration")}
+                  onClick={() => navigateTo("StudentRegistration", { from: 'instructor' })}
                 >
                   Novo Aluno
                 </Button>

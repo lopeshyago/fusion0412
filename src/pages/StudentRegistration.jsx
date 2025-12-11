@@ -6,11 +6,16 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import { localApi } from '@/api/localApi';
 import { useOptimizedNavigation } from "../components/common/NavigationHelper";
+import { useLocation } from 'react-router-dom';
 
 const logoUrl = "/fusionlogo.png";
 
 export default function StudentRegistration() {
   const { navigateTo } = useOptimizedNavigation();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const fromParam = params.get('from');
+  const backTarget = fromParam === 'instructor' ? 'InstructorDashboard' : 'Index';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -87,7 +92,7 @@ export default function StudentRegistration() {
             <img src={logoUrl} alt="Fusion Logo" className="h-10 w-auto" />
             <span className="text-xl font-bold text-white">Cadastro de Aluno</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigateTo('Index')} className="text-white hover:bg-white/20">
+          <Button variant="ghost" size="sm" onClick={() => navigateTo(backTarget)} className="text-white hover:bg-white/20">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar ao Menu
           </Button>
