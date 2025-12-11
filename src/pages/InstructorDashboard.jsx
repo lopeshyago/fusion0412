@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { User } from "@/api/entities_new";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, Plus, Calculator, UserCheck, Wrench, Bell, LogOut, UserPlus } from "lucide-react";
 import InstructorBottomNavBar from "../components/instructor/InstructorBottomNavBar";
@@ -12,27 +13,27 @@ const InstructorDashboard = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    let retried = false;
-    const loadUser = async () => {
+    let isMounted = true;
+    const loadUser = async (isRetry = false) => {
       try {
-        const { User } = await import("@/api/entities_new");
         const currentUser = await User.me();
-        setUser(currentUser);
+        if (isMounted) setUser(currentUser);
       } catch (error) {
-        if (!retried) {
-          retried = true;
-          setTimeout(loadUser, 800);
+        if (!isMounted) return;
+        
+        if (!isRetry) {
+          setTimeout(() => loadUser(true), 800);
         } else {
           navigateTo('Index');
         }
       }
     };
     loadUser();
-    return () => { retried = true; };
+    return () => { isMounted = false; };
   }, [navigateTo]);
 
   const handleLogout = async () => {
-    try { const { User } = await import('@/api/entities_new'); await User.logout(); } catch {}
+    try { await User.logout(); } catch {}
     navigateTo('Index', {}, true);
   };
 
