@@ -105,6 +105,25 @@ async function ensureSchemaColumns() {
       await runSql('CREATE UNIQUE INDEX IF NOT EXISTS idx_condominiums_invite_code ON condominiums(invite_code)');
     }
 
+    // maintenance_items table (new chamados)
+    await runSql(
+      `CREATE TABLE IF NOT EXISTS maintenance_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        condominium_id INTEGER,
+        equipment_name TEXT,
+        description TEXT,
+        media_urls TEXT,
+        status TEXT,
+        created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY(condominium_id) REFERENCES condominiums(id) ON DELETE SET NULL
+      )`
+    );
+    const miCols = await allSql('PRAGMA table_info(maintenance_items)');
+    const miNames = new Set(miCols.map(c => c.name));
+    if (!miNames.has('created_date')) await runSql("ALTER TABLE maintenance_items ADD COLUMN created_date DATETIME DEFAULT CURRENT_TIMESTAMP");
+
     // weekly_schedules table (used by grade de horários)
     await runSql(
       `CREATE TABLE IF NOT EXISTS weekly_schedules (
@@ -307,6 +326,21 @@ app.get('/api/:table', authMiddleware, async (req, res) => {
         return r;
       });
     }
+    if (table === 'maintenance_items') {
+      rows = rows.map(r => {
+        if (typeof r.media_urls === 'string' && r.media_urls) {
+          try {
+            const parsed = JSON.parse(r.media_urls);
+            r.media_urls = Array.isArray(parsed) ? parsed : [parsed];
+          } catch {
+            r.media_urls = r.media_urls.split(',').map(s => s.trim()).filter(Boolean);
+          }
+        } else if (!Array.isArray(r.media_urls)) {
+          r.media_urls = [];
+        }
+        return r;
+      });
+    }
     res.json(rows);
   } catch (e) { console.error(e); res.status(500).json({ error: 'failed' }); }
 });
@@ -371,6 +405,10 @@ app.post('/api/:table', authMiddleware, async (req, res) => {
     if (table === 'posts') {
       if (cols.includes('content') && !('content' in data)) defaults.content = '';
       if (cols.includes('media_url') && !('media_url' in data)) defaults.media_url = null;
+    }
+    if (table === 'maintenance_items') {
+      if (cols.includes('status') && !('status' in data)) defaults.status = 'reportado';
+      if (cols.includes('created_date') && !('created_date' in data)) defaults.created_date = new Date().toISOString();
     }
     const safeData = { ...defaults, ...data };
     const insertCols = [];

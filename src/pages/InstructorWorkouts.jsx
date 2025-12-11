@@ -34,6 +34,7 @@ export default function InstructorWorkouts() {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assigningWorkout, setAssigningWorkout] = useState(null);
   const [workoutView, setWorkoutView] = useState('all');
+  const [historyStudent, setHistoryStudent] = useState(null);
   const { navigateTo } = useOptimizedNavigation();
 
   useEffect(() => {
@@ -231,9 +232,10 @@ export default function InstructorWorkouts() {
   });
 
   const filteredWorkouts = workouts.filter(w => {
-    if (workoutView === 'templates') return w.is_template;
-    if (workoutView === 'personalized') return !w.is_template && w.student_id;
-    return true; // 'all'
+    // Biblioteca não deve listar treinos de alunos; apenas templates ou genéricos
+    if (workoutView === 'templates') return w.is_template && !w.student_id;
+    if (workoutView === 'personalized') return !w.is_template && !w.student_id;
+    return !w.student_id || w.is_template; // 'all' sem treinos de alunos
   });
 
   const getObjectiveColor = (objective) => {
@@ -363,6 +365,14 @@ export default function InstructorWorkouts() {
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             Criar Treino
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => setHistoryStudent(student)}
+                            className="w-full sm:w-auto border-orange-200 text-orange-700"
+                          >
+                            <Clock className="h-4 w-4 mr-2" />
+                            Histórico
                           </Button>
                         </div>
                       </CardContent>
@@ -498,6 +508,57 @@ export default function InstructorWorkouts() {
             )}
           </TabsContent>
         </Tabs>
+
+        {historyStudent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="p-4 border-b flex justify-between items-center bg-orange-50">
+                <h3 className="font-bold text-lg text-gray-800">
+                  Treinos de {historyStudent.full_name}
+                </h3>
+                <Button variant="ghost" size="sm" onClick={() => setHistoryStudent(null)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="p-4 overflow-y-auto flex-1">
+                {workouts.filter(w => w.student_id === historyStudent.id && !w.is_template).length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">Nenhum treino para este aluno.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {workouts
+                      .filter(w => w.student_id === historyStudent.id && !w.is_template)
+                      .sort((a, b) => new Date(b.created_at || b.created_date || 0) - new Date(a.created_at || a.created_date || 0))
+                      .map((workout) => (
+                        <div key={workout.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                          <div>
+                            <p className="font-medium text-gray-800">{workout.name}</p>
+                            <div className="flex items-center gap-4 text-sm text-gray-600 mt-1 flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <Dumbbell className="h-3 w-3" />
+                                {workout.exercises?.length || 0} exercícios
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(workout.created_at || workout.created_date || Date.now()).toLocaleDateString('pt-BR')}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => { setHistoryStudent(null); handleEdit(workout); }}>
+                              <Edit className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteWorkout(workout.id)}>
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <WorkoutBuilderForm
           isOpen={isFormOpen}
