@@ -71,11 +71,11 @@ export default function InstructorWorkouts() {
       };
 
       const parsed = allWorkouts.map(normalizeWorkout);
-      let onlyMine = parsed.filter(w => (w.instructor_id || w.user_id) === currentUser.id);
-      if (onlyMine.length === 0) {
-        // Fallback: se instructor_id não vier no payload, use todos e deixe filtros visuais atuarem
-        onlyMine = parsed;
-      }
+      let onlyMine = parsed.filter(w => {
+        const currentUserId = String(currentUser.id);
+        // Mostra se eu sou o dono (user_id) OU se eu sou o instrutor (instructor_id)
+        return String(w.user_id) === currentUserId || (w.instructor_id && String(w.instructor_id) === currentUserId);
+      });
 
       setWorkouts(onlyMine);
       setStudents(fetchedStudents);
@@ -89,7 +89,8 @@ export default function InstructorWorkouts() {
   const handleSave = async (workoutData) => {
     if (!workoutData) return;
     try {
-      const targetStudentId = selectedStudent?.id || workoutData.student_id || null;
+      // Garante que o ID do aluno seja preservado na edição ou pego do formulário/seleção
+      const targetStudentId = selectedStudent?.id || workoutData.student_id || editingWorkout?.student_id || null;
 
       const payload = {
         title: workoutData.name || 'Treino',
@@ -132,7 +133,8 @@ export default function InstructorWorkouts() {
 
   const handleEdit = (workout) => {
     setEditingWorkout(workout);
-    setSelectedStudent(workout.student_id ? students.find(s => s.id === workout.student_id) : null);
+    // Usa comparação de string para evitar erros de tipo (number vs string)
+    setSelectedStudent(workout.student_id ? students.find(s => String(s.id) === String(workout.student_id)) : null);
     setIsFormOpen(true);
   };
   
