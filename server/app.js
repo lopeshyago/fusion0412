@@ -568,7 +568,29 @@ app.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
 });
 
 app.get('/me', authMiddleware, async (req, res) => {
-  const row = await getSql('SELECT u.id,u.email,u.user_type,u.phone,u.cpf,u.address,u.condominium_id,p.full_name,p.avatar_url,p.role,p.sex FROM users u LEFT JOIN profiles p ON p.user_id=u.id WHERE u.id=?', [req.user.id]);
+  const row = await getSql(`SELECT 
+      u.id,
+      u.email,
+      u.user_type,
+      u.phone,
+      u.cpf,
+      u.address,
+      u.condominium_id,
+      u.plan_status,
+      u.par_q_completed,
+      u.par_q_has_risk,
+      u.medical_certificate_url,
+      u.medical_certificate_required_date,
+      u.date_of_birth,
+      u.block,
+      u.apartment,
+      p.full_name,
+      p.avatar_url,
+      p.role,
+      p.sex
+    FROM users u 
+    LEFT JOIN profiles p ON p.user_id=u.id 
+    WHERE u.id=?`, [req.user.id]);
   res.json(row);
 });
 
