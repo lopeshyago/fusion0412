@@ -16,25 +16,38 @@ export default function InstructorRegistration() {
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [cpf, setCpf] = useState("");
+  const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const formatPhone = (value) => {
+    const digits = (value || "").replace(/\D/g, '').slice(0, 11);
+    if (!digits) return '';
+    const part1 = digits.slice(0, 2);
+    const part2 = digits.slice(2, 7);
+    const part3 = digits.slice(7, 11);
+    const middle = part2 ? ` ${part2}` : '';
+    const end = part3 ? `-${part3}` : '';
+    return `(${part1}${part1.length === 2 ? ')' : ''}${middle}${end}`.trim();
+  };
 
   const handleBackToMenu = () => {
     window.location.href = createPageUrl('Index');
   };
 
   const handleRegister = async () => {
-    if (!inviteCode.trim() || !email || !password || !fullName || !dateOfBirth || !cpf) {
+    if (!inviteCode.trim() || !email || !password || !fullName || !dateOfBirth || !cpf || !phone) {
       setError("Preencha todos os campos.");
       return;
     }
     setIsLoading(true);
     setError("");
     try {
+      const phoneDigits = phone.replace(/\D/g, '');
       const res = await localApi.request("/register/instructor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name: fullName, invite_code: inviteCode.trim(), date_of_birth: dateOfBirth, cpf })
+        body: JSON.stringify({ email, password, full_name: fullName, invite_code: inviteCode.trim(), date_of_birth: dateOfBirth, cpf, phone: phoneDigits })
       });
       if (res?.token) {
         localApi.setToken(res.token);
@@ -87,6 +100,16 @@ export default function InstructorRegistration() {
             <div className="space-y-2">
               <Label>E-mail</Label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="border-orange-200" />
+            </div>
+            <div className="space-y-2">
+              <Label>Telefone/WhatsApp</Label>
+              <Input
+                value={phone}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
+                className="border-orange-200"
+                autoComplete="tel"
+                placeholder="(11) 90000-0000"
+              />
             </div>
             <div className="space-y-2">
               <Label>Data de Nascimento</Label>

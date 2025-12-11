@@ -12,6 +12,17 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
   const [condominiums, setCondominiums] = useState([]);
   const [selectedUserType, setSelectedUserType] = useState('student');
 
+  const formatPhone = (value) => {
+    const digits = (value || "").replace(/\D/g, '').slice(0, 11);
+    if (!digits) return '';
+    const part1 = digits.slice(0, 2);
+    const part2 = digits.slice(2, 7);
+    const part3 = digits.slice(7, 11);
+    const middle = part2 ? ` ${part2}` : '';
+    const end = part3 ? `-${part3}` : '';
+    return `(${part1}${part1.length === 2 ? ')' : ''}${middle}${end}`.trim();
+  };
+
   useEffect(() => {
     const loadCondos = async () => {
       try {
@@ -28,7 +39,7 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
     if (user) {
       setValue('full_name', user.full_name || '');
       setValue('email', user.email || '');
-      setValue('phone', user.phone || '');
+      setValue('phone', formatPhone(user.phone || ''));
       setValue('cpf', user.cpf || '');
       setValue('date_of_birth', user.date_of_birth || '');
       setValue('block', user.block || '');
@@ -43,10 +54,11 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
 
   const onSubmit = async (data) => {
     try {
+      const phoneDigits = data.phone ? data.phone.replace(/\D/g, '') : '';
       const payload = {
         full_name: data.full_name || '',
         email: user ? (user.email || '') : (data.email || ''),
-        phone: data.phone || '',
+        phone: phoneDigits,
         cpf: data.cpf || '',
         date_of_birth: data.date_of_birth || null,
         block: data.block || '',
@@ -94,7 +106,12 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
           </div>
           <div>
             <Label htmlFor="phone">Telefone</Label>
-            <Input id="phone" {...register('phone')} />
+            <Input
+              id="phone"
+              autoComplete="tel"
+              {...register('phone')}
+              onChange={(e) => setValue('phone', formatPhone(e.target.value))}
+            />
           </div>
           <div>
             <Label htmlFor="cpf">CPF</Label>

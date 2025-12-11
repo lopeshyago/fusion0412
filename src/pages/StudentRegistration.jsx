@@ -19,6 +19,7 @@ export default function StudentRegistration() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [condoCode, setCondoCode] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [cpf, setCpf] = useState('');
@@ -43,9 +44,20 @@ export default function StudentRegistration() {
   const age = calculateAge(dateOfBirth);
   const isMinor = age !== null && age < 18;
 
+  const formatPhone = (value) => {
+    const digits = (value || "").replace(/\D/g, '').slice(0, 11);
+    if (!digits) return '';
+    const part1 = digits.slice(0, 2);
+    const part2 = digits.slice(2, 7);
+    const part3 = digits.slice(7, 11);
+    const middle = part2 ? ` ${part2}` : '';
+    const end = part3 ? `-${part3}` : '';
+    return `(${part1}${part1.length === 2 ? ')' : ''}${middle}${end}`.trim();
+  };
+
   const submit = async (e) => {
     e.preventDefault();
-    if (!email || !password || !fullName || !condoCode || !dateOfBirth || !cpf) {
+    if (!email || !password || !fullName || !condoCode || !dateOfBirth || !cpf || !phone) {
       setError('Preencha todos os campos obrigatórios.');
       return;
     }
@@ -64,6 +76,7 @@ export default function StudentRegistration() {
           full_name: fullName, 
           condo_code: condoCode,
           date_of_birth: dateOfBirth,
+          phone: phone.replace(/\D/g, ''),
           cpf,
           block,
           apartment,
@@ -121,9 +134,19 @@ export default function StudentRegistration() {
                 <Label>Data de Nascimento</Label>
                 <Input type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} className="border-orange-200" />
               </div>
+            <div className="space-y-1">
+              <Label>E-mail</Label>
+              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} className="border-orange-200" />
+            </div>
               <div className="space-y-1">
-                <Label>E-mail</Label>
-                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} className="border-orange-200" />
+                <Label>Telefone/WhatsApp</Label>
+                <Input
+                  value={phone}
+                  onChange={e => setPhone(formatPhone(e.target.value))}
+                  className="border-orange-200"
+                  autoComplete="tel"
+                  placeholder="(11) 90000-0000"
+                />
               </div>
               <div className="space-y-1">
                 <Label>Senha</Label>
