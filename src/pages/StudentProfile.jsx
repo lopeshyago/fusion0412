@@ -642,9 +642,8 @@ export default function StudentProfile() {
                                     )}
                                 </div>
                             </div>
-
-                            
-                    )}
+                        </CardContent>
+                    </Card>
                 </form>
 
                 {/* Status da Conta */}
