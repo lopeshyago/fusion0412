@@ -431,34 +431,26 @@ export default function StudentProfile() {
                                         <Button onClick={() => setIsEditing(true)} className="bg-orange-500 hover:bg-orange-600">
                                             Editar Perfil
                                         </Button>
-                                    ) : ( 
-                                        <>
-                                            {!isFirstAccess(user || {}) && (
-                                                <Button variant="outline" onClick={() => {
-                                                    setIsEditing(false);
-                                                    reset({
-                                                        full_name: user.full_name || "",
-                                                        phone: user.phone || "",
-                                                        age: calculateAge(user.date_of_birth),
-                                                        date_of_birth: user.date_of_birth || "",
-                                                        address: user.address || "",
-                                                        cpf: user.cpf ? user.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : "", // Corrigido
-                                                        avatar_url: user.avatar_url || "",
-                                                        sex: user.sex || ""
-                                                    });
-                                                }}>
-                                                    Cancelar
-                                                </Button>
-                                            )}
-                                            <Button 
-                                                onClick={handleSubmit(handleSaveProfile)} 
-                                                disabled={isSaving}
-                                                className="bg-orange-500 hover:bg-orange-600"
-                                            >
-                                                <Save className="h-4 w-4 mr-2" />
-                                                {isSaving ? 'Salvando...' : 'Salvar'}
+                                    ) : (
+                                        !isFirstAccess(user || {}) && (
+                                            <Button variant="outline" onClick={() => {
+                                                setIsEditing(false);
+                                                reset({
+                                                    full_name: user.full_name || "",
+                                                    phone: user.phone || "",
+                                                    age: calculateAge(user.date_of_birth),
+                                                    date_of_birth: user.date_of_birth || "",
+                                                    address: user.address || "",
+                                                    cpf: user.cpf ? user.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : "",
+                                                    avatar_url: user.avatar_url || "",
+                                                    sex: user.sex || "",
+                                                    block: user.block || "",
+                                                    apartment: user.apartment || ""
+                                                });
+                                            }}>
+                                                Cancelar
                                             </Button>
-                                        </>
+                                        )
                                     )}
                                 </div>
                             </div>
@@ -642,6 +634,18 @@ export default function StudentProfile() {
                             </div>
                         </CardContent>
                     </Card>
+                    {isEditing && (
+                        <div className="mt-4">
+                            <Button 
+                                type="submit" 
+                                disabled={isSaving}
+                                className="w-full bg-orange-500 hover:bg-orange-600 text-lg py-4"
+                            >
+                                <Save className="h-4 w-4 mr-2" />
+                                {isSaving ? 'Salvando...' : 'Salvar Perfil'}
+                            </Button>
+                        </div>
+                    )}
                 </form>
 
                 {/* Status da Conta */}
