@@ -1,6 +1,6 @@
 import Layout from "./Layout.jsx";
-
-import Index from "./SelectRole";
+import { useEffect } from "react";
+import { User } from "@/api/entities_new";
 
 import Schedule from "./Schedule";
 
@@ -82,8 +82,7 @@ import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-route
 import SelectRole from "./SelectRole";
 
 const PAGES = {
-    
-    Index: SelectRole,
+    Index: SelectRole, // Mantém SelectRole como a página inicial visual
     
     Schedule: Schedule,
     
@@ -190,10 +189,8 @@ function PagesContent() {
     return (
         <Layout currentPageName={currentPage}>
             <Routes>            
-                
-                    <Route path="/" element={<SelectRole />} />
-                
-                
+                <Route path="/" element={<SelectRole />} />
+
                 <Route path="/Index" element={<SelectRole />} />
                 
                 <Route path="/Schedule" element={<Schedule />} />

@@ -64,7 +64,9 @@ export default function InstructorWorkouts() {
           title: row.title || data.name || 'Treino',
           name: data.name || row.title || 'Treino',
           user_id: row.user_id,
-          created_at: row.created_at
+          created_at: row.created_at,
+          instructor_id: row.instructor_id || data.instructor_id,
+          student_id: row.student_id || data.student_id
         };
       };
 
@@ -87,13 +89,19 @@ export default function InstructorWorkouts() {
   const handleSave = async (workoutData) => {
     if (!workoutData) return;
     try {
+      const targetStudentId = selectedStudent?.id || workoutData.student_id || null;
+
       const payload = {
         title: workoutData.name || 'Treino',
         data: JSON.stringify({
           ...workoutData,
-          name: workoutData.name || 'Treino'
+          name: workoutData.name || 'Treino',
+          instructor_id: instructor?.id,
+          student_id: targetStudentId
         }),
-        user_id: instructor?.id || workoutData.instructor_id || null
+        user_id: targetStudentId || instructor?.id,
+        instructor_id: instructor?.id,
+        student_id: targetStudentId
       };
       if (editingWorkout) {
         await Workout.update(editingWorkout.id, payload);
@@ -107,6 +115,7 @@ export default function InstructorWorkouts() {
     await loadData();
     setIsFormOpen(false);
     setEditingWorkout(null);
+    if (!editingWorkout) setSelectedStudent(null);
   };
 
   const handleCreateForStudent = (student) => {
@@ -153,7 +162,7 @@ export default function InstructorWorkouts() {
     const payloadAssign = {
       title: assignedWorkout.name || 'Treino',
       data: JSON.stringify({ ...assignedWorkout, name: assignedWorkout.name || 'Treino' }),
-      user_id: instructor?.id || assignedWorkout.instructor_id || null,
+      user_id: studentId,
       instructor_id: instructor?.id || assignedWorkout.instructor_id || null,
       student_id: studentId
     };

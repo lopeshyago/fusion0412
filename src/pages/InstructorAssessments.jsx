@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calculator, Search, ArrowLeft, Plus, Users, Filter } from "lucide-react";
+import { Calculator, Search, ArrowLeft, Plus, Users, Filter, History, Trash2, Edit, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import { createPageUrl } from '@/utils';
@@ -28,6 +28,8 @@ export default function InstructorAssessments() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [historyStudent, setHistoryStudent] = useState(null);
+  const [editingAssessment, setEditingAssessment] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -119,6 +121,7 @@ export default function InstructorAssessments() {
 
   const handleNewAssessment = (student) => {
     setSelectedStudent(student);
+    setEditingAssessment(null);
     setIsFormOpen(true);
   };
 
@@ -128,7 +131,33 @@ export default function InstructorAssessments() {
       await loadData();
       setIsFormOpen(false);
       setSelectedStudent(null);
+      setEditingAssessment(null);
     }, 1000); // 1 second delay
+  };
+
+  const handleOpenHistory = (student) => {
+    setHistoryStudent(student);
+  };
+
+  const handleDeleteAssessment = async (assessmentId) => {
+    if (confirm('Tem certeza que deseja excluir esta avaliação?')) {
+      try {
+        await DetailedAssessment.delete(assessmentId);
+        // Atualiza a lista localmente para feedback imediato
+        setAssessments(prev => prev.filter(a => a.id !== assessmentId));
+        await loadData();
+      } catch (error) {
+        console.error("Erro ao excluir avaliação:", error);
+        alert("Erro ao excluir avaliação.");
+      }
+    }
+  };
+
+  const handleEditAssessment = (assessment) => {
+    setEditingAssessment(assessment);
+    setSelectedStudent(allStudents.find(s => s.id === assessment.student_id));
+    setHistoryStudent(null); // Fecha o modal de histórico
+    setIsFormOpen(true);
   };
 
   const handleCondoFilter = (condoId) => {
@@ -399,13 +428,23 @@ export default function InstructorAssessments() {
                       </div>
                     </div>
 
-                    <Button 
-                      onClick={() => handleNewAssessment(student)}
-                      className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nova Avaliação
-                    </Button>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleOpenHistory(student)}
+                        className="w-full sm:w-auto border-orange-200 text-orange-700 hover:bg-orange-50"
+                      >
+                        <History className="h-4 w-4 mr-2" />
+                        Histórico
+                      </Button>
+                      <Button 
+                        onClick={() => handleNewAssessment(student)}
+                        className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nova Avaliação
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -420,8 +459,56 @@ export default function InstructorAssessments() {
           studentId={selectedStudent?.id}
           instructorId={instructor?.id}
           studentName={selectedStudent?.full_name}
+          assessment={editingAssessment}
           onSave={handleSaveAssessment}
         />
+
+        {/* Modal de Histórico */}
+        {historyStudent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="p-4 border-b flex justify-between items-center bg-orange-50">
+                <h3 className="font-bold text-lg text-gray-800">
+                  Histórico: {historyStudent.full_name}
+                </h3>
+                <Button variant="ghost" size="sm" onClick={() => setHistoryStudent(null)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              <div className="p-4 overflow-y-auto flex-1">
+                {assessments.filter(a => a.student_id === historyStudent.id).length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">Nenhuma avaliação registrada.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {assessments
+                      .filter(a => a.student_id === historyStudent.id)
+                      .map((assessment) => (
+                        <div key={assessment.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                          <div>
+                            <p className="font-medium text-gray-800">
+                              {new Date(assessment.assessment_date).toLocaleDateString('pt-BR')}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Peso: {assessment.weight}kg | Gordura: {assessment.body_fat_percentage}%
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditAssessment(assessment)}>
+                              <Edit className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteAssessment(assessment.id)}>
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
       <InstructorBottomNavBar activePage="InstructorAssessments" />
