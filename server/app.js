@@ -105,24 +105,24 @@ async function ensureSchemaColumns() {
       await runSql('CREATE UNIQUE INDEX IF NOT EXISTS idx_condominiums_invite_code ON condominiums(invite_code)');
     }
 
-    // maintenance_items table (new chamados)
+    // maintenance_items table (schema legado)
     await runSql(
       `CREATE TABLE IF NOT EXISTS maintenance_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        condominium_id INTEGER,
-        equipment_name TEXT,
+        title TEXT NOT NULL,
         description TEXT,
+        priority TEXT DEFAULT 'medium',
+        status TEXT DEFAULT 'open',
+        reported_by INTEGER,
+        assigned_to INTEGER,
+        condominium_id INTEGER,
         media_urls TEXT,
-        status TEXT,
-        created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(reported_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY(assigned_to) REFERENCES users(id) ON DELETE SET NULL,
         FOREIGN KEY(condominium_id) REFERENCES condominiums(id) ON DELETE SET NULL
       )`
     );
-    const miCols = await allSql('PRAGMA table_info(maintenance_items)');
-    const miNames = new Set(miCols.map(c => c.name));
-    if (!miNames.has('created_date')) await runSql("ALTER TABLE maintenance_items ADD COLUMN created_date DATETIME DEFAULT CURRENT_TIMESTAMP");
 
     // weekly_schedules table (used by grade de horários)
     await runSql(
@@ -341,6 +341,24 @@ app.get('/api/:table', authMiddleware, async (req, res) => {
         return r;
       });
     }
+    if (table === 'maintenance_items') {
+      rows = rows.map(r => {
+        if (typeof r.media_urls === 'string' && r.media_urls) {
+          try {
+            const parsed = JSON.parse(r.media_urls);
+            r.media_urls = Array.isArray(parsed) ? parsed : [parsed];
+          } catch {
+            r.media_urls = r.media_urls.split(',').map(s => s.trim()).filter(Boolean);
+          }
+        } else if (!Array.isArray(r.media_urls)) {
+          r.media_urls = [];
+        }
+        // Compatibilidade com frontend
+        r.equipment_name = r.title || r.equipment_name || 'Equipamento';
+        r.created_date = r.created_at || r.created_date;
+        return r;
+      });
+    }
     res.json(rows);
   } catch (e) { console.error(e); res.status(500).json({ error: 'failed' }); }
 });
@@ -407,8 +425,16 @@ app.post('/api/:table', authMiddleware, async (req, res) => {
       if (cols.includes('media_url') && !('media_url' in data)) defaults.media_url = null;
     }
     if (table === 'maintenance_items') {
-      if (cols.includes('status') && !('status' in data)) defaults.status = 'reportado';
-      if (cols.includes('created_date') && !('created_date' in data)) defaults.created_date = new Date().toISOString();
+      const mapped = { ...data };
+      mapped.title = data.title || data.equipment_name || 'Manutenção';
+      mapped.description = data.description || '';
+      mapped.priority = data.priority || 'medium';
+      mapped.status = data.status || 'open';
+      mapped.reported_by = req.user?.id ?? data.reported_by ?? null;
+      if (Array.isArray(data.media_urls)) mapped.media_urls = JSON.stringify(data.media_urls);
+      Object.assign(data, mapped);
+      if (cols.includes('status') && !('status' in data)) defaults.status = 'open';
+      if (cols.includes('created_at') && !('created_at' in data)) defaults.created_at = new Date().toISOString();
     }
     const safeData = { ...defaults, ...data };
     const insertCols = [];
