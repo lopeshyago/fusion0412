@@ -17,6 +17,17 @@ export default function AdminProfile() {
   const [error, setError] = useState('');
   const [ok, setOk] = useState('');
 
+  const formatPhone = (value) => {
+    const digits = (value || "").replace(/\D/g, '').slice(0, 11);
+    if (!digits) return '';
+    const part1 = digits.slice(0, 2);
+    const part2 = digits.slice(2, 7);
+    const part3 = digits.slice(7, 11);
+    const middle = part2 ? ` ${part2}` : '';
+    const end = part3 ? `-${part3}` : '';
+    return `(${part1}${part1.length === 2 ? ')' : ''}${middle}${end}`.trim();
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -24,7 +35,7 @@ export default function AdminProfile() {
         const me = await User.me();
         const initial = {
           full_name: me?.full_name || '',
-          phone: me?.phone || '',
+          phone: formatPhone(me?.phone || ''),
           avatar_url: me?.avatar_url || '',
           cpf: me?.cpf ? me.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : '',
           address: me?.address || '',
@@ -50,6 +61,8 @@ export default function AdminProfile() {
         .replace(/(\d{3})(\d{1,2})/, "$1-$2")
         .replace(/(-\d{2})\d+?$/, "$1");
       setForm(prev => ({ ...prev, cpf: formatted }));
+    } else if (id === 'phone') {
+      setForm(prev => ({ ...prev, phone: formatPhone(value) }));
     } else {
       setForm(prev => ({ ...prev, [id]: value }));
     }
@@ -71,9 +84,10 @@ export default function AdminProfile() {
         } catch (e) { console.error('Falha no upload do avatar', e); }
       }
       const cpfNumbers = form.cpf.replace(/\D/g, "");
+      const phoneDigits = form.phone ? form.phone.replace(/\D/g, '') : '';
       await User.updateMyUserData({
         full_name: form.full_name,
-        phone: form.phone,
+        phone: phoneDigits,
         cpf: cpfNumbers,
         address: form.address,
         avatar_url: avatarUrl,

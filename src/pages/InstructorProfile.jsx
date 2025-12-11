@@ -27,6 +27,17 @@ export default function InstructorProfile() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState("");
 
+  const formatPhone = (value) => {
+    const digits = (value || "").replace(/\D/g, '').slice(0, 11);
+    if (!digits) return '';
+    const part1 = digits.slice(0, 2);
+    const part2 = digits.slice(2, 7);
+    const part3 = digits.slice(7, 11);
+    const middle = part2 ? ` ${part2}` : '';
+    const end = part3 ? `-${part3}` : '';
+    return `(${part1}${part1.length === 2 ? ')' : ''}${middle}${end}`.trim();
+  };
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -35,7 +46,7 @@ export default function InstructorProfile() {
         setCondominiums(condos);
         const initial = {
           full_name: currentUser.full_name || "",
-          phone: currentUser.phone || "",
+          phone: formatPhone(currentUser.phone || ""),
           cpf: currentUser.cpf
             ? currentUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
             : "",
@@ -66,6 +77,8 @@ export default function InstructorProfile() {
         .replace(/(\d{3})(\d{1,2})/, "$1-$2")
         .replace(/(-\d{2})\d+?$/, "$1");
       setFormData((prev) => ({ ...prev, [id]: formatted }));
+    } else if (id === "phone") {
+      setFormData((prev) => ({ ...prev, [id]: formatPhone(value) }));
     } else {
       setFormData((prev) => ({ ...prev, [id]: value }));
     }
@@ -88,6 +101,7 @@ export default function InstructorProfile() {
       setError("CPF deve ter 11 dígitos.");
       return;
     }
+    const phoneNumbers = (phone || '').replace(/\D/g, '');
 
     try {
       let avatarUrl = formData.avatar_url || "";
@@ -106,6 +120,7 @@ export default function InstructorProfile() {
 
       await User.updateMyUserData({
         ...formData,
+        phone: phoneNumbers,
         cpf: cpfNumbers,
         avatar_url: avatarUrl,
         plan_status: "active",

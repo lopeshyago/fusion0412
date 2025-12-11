@@ -82,6 +82,22 @@ export default function StudentProfile() {
         return !userData.phone || !userData.address || !userData.cpf || !userData.date_of_birth || !userData.sex;
     };
 
+    const formatPhone = (value) => {
+        const digits = (value || "").replace(/\D/g, '').slice(0, 11);
+        if (!digits) return '';
+        const part1 = digits.slice(0, 2);
+        const part2 = digits.slice(2, 7);
+        const part3 = digits.slice(7, 11);
+        const middle = part2 ? ` ${part2}` : '';
+        const end = part3 ? `-${part3}` : '';
+        return `(${part1}${part1.length === 2 ? ')' : ''}${middle}${end}`.trim();
+    };
+
+    const handlePhoneChange = (e) => {
+        const formatted = formatPhone(e.target.value);
+        setValue('phone', formatted, { shouldValidate: true });
+    };
+
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
@@ -102,7 +118,7 @@ export default function StudentProfile() {
                 // Reset form with user data
                 reset({
                     full_name: currentUser.full_name || "",
-                    phone: currentUser.phone || "",
+                    phone: formatPhone(currentUser.phone || ""),
                     age: calculatedAge,
                     date_of_birth: currentUser.date_of_birth || "",
                     address: currentUser.address || "",
@@ -209,7 +225,7 @@ export default function StudentProfile() {
 
             const updateData = {
                 full_name: data.full_name,
-                phone: data.phone,
+                phone: data.phone ? data.phone.replace(/\D/g, '') : '',
                 block: data.block,
                 apartment: data.apartment,
                 address: data.address,
@@ -229,7 +245,7 @@ export default function StudentProfile() {
             const calculatedAge = calculateAge(updatedUser.date_of_birth);
             reset({
                 full_name: updatedUser.full_name || "",
-                phone: updatedUser.phone || "",
+                phone: formatPhone(updatedUser.phone || ""),
                 age: calculatedAge,
                 date_of_birth: updatedUser.date_of_birth || "",
                 address: updatedUser.address || "",
@@ -586,6 +602,7 @@ export default function StudentProfile() {
                                                 name="phone"
                                                 autoComplete="tel"
                                                 {...register("phone", { required: "Telefone é obrigatório" })}
+                                                onChange={handlePhoneChange}
                                                 className="border-orange-200 pl-10"
                                             />
                                             {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
