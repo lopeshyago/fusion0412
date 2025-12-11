@@ -239,7 +239,6 @@ export default function StudentProfile() {
                 block: updatedUser.block || "",
                 apartment: updatedUser.apartment || ""
             });
-            
             setIsEditing(false);
             setSuccess("Dados salvos com sucesso! Redirecionando para seu painel...");
             setTimeout(() => navigateTo('StudentDashboard', {}, true), 1200);
