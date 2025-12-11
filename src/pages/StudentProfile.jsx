@@ -450,16 +450,14 @@ export default function StudentProfile() {
                                                     Cancelar
                                                 </Button>
                                             )}
-                                            {isFirstAccess(user || {}) ? null : ( 
-                                                <Button 
-                                                    onClick={handleSubmit(handleSaveProfile)} 
-                                                    disabled={isSaving}
-                                                    className="bg-orange-500 hover:bg-orange-600"
-                                                >
-                                                    <Save className="h-4 w-4 mr-2" />
-                                                    {isSaving ? 'Salvando...' : 'Salvar'}
-                                                </Button>
-                                            )}
+                                            <Button 
+                                                onClick={handleSubmit(handleSaveProfile)} 
+                                                disabled={isSaving}
+                                                className="bg-orange-500 hover:bg-orange-600"
+                                            >
+                                                <Save className="h-4 w-4 mr-2" />
+                                                {isSaving ? 'Salvando...' : 'Salvar'}
+                                            </Button>
                                         </>
                                     )}
                                 </div>
