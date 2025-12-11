@@ -164,6 +164,12 @@ export const OfflineDataPreloader = ({ children }) => {
 
   useEffect(() => {
     if (!isOnline) return;
+    // Se não houver token, não dispara pré-carregamento para evitar 401 em loop
+    let hasToken = false;
+    try {
+      hasToken = Boolean(localStorage.getItem('fusion_token'));
+    } catch {}
+    if (!hasToken) return;
 
     const preloadCriticalData = async () => {
       try {

@@ -27,6 +27,13 @@ class LocalApiClient {
       } catch {}
     }
 
+    const isAuthEndpoint = endpoint.startsWith('/auth');
+    const isPublic = isAuthEndpoint || endpoint.startsWith('/components/pwa');
+    if (!this.token && !isPublic) {
+      // Evita chamadas sem token que só gerariam 401 e spam no console
+      throw new Error('API Error: 401 - {"error":"No token"}');
+    }
+
     const base = API_URL || '';
     const url = `${base}${endpoint}`;
     const headers = {
@@ -73,6 +80,17 @@ class LocalApiClient {
   }
 
   async getCurrentUser() {
+    // Se não houver token, evita chamadas desnecessárias e retorna nulo
+    if (!this.token) {
+      try {
+        const saved = localStorage.getItem('fusion_token');
+        if (saved) this.token = saved;
+      } catch {}
+      if (!this.token) {
+        return { user: null, unauthenticated: true };
+      }
+    }
+
     const data = await this.request('/me');
     // The backend returns the user object directly, but the UI expects `{ user: ... }`
     // Normalize the shape here to avoid `undefined` user data across the app.
