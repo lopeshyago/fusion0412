@@ -92,6 +92,7 @@ async function ensureSchemaColumns() {
     if (!uNames.has('guardian_contact')) await runSql('ALTER TABLE users ADD COLUMN guardian_contact TEXT');
     if (!uNames.has('doctor_name')) await runSql('ALTER TABLE users ADD COLUMN doctor_name TEXT');
     if (!uNames.has('doctor_crm')) await runSql('ALTER TABLE users ADD COLUMN doctor_crm TEXT');
+    if (!uNames.has('date_of_birth')) await runSql('ALTER TABLE users ADD COLUMN date_of_birth TEXT');
 
     // condominiums extras
     const cCols = await allSql('PRAGMA table_info(condominiums)');
