@@ -85,6 +85,10 @@ export default function InstructorMaintenance() {
     setIsViewerOpen(true);
   };
 
+  const isImageUrl = (url = "") => {
+    return /\.(jpeg|jpg|gif|png|webp|bmp)$/i.test(url) || url.includes('/uploads/');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
@@ -144,9 +148,9 @@ export default function InstructorMaintenance() {
                               onClick={() => openMediaViewer(url)}
                               className="relative w-24 h-24 rounded-lg overflow-hidden group focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
                             >
-                              {url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? <img src={url} alt={`Mídia ${index + 1}`} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-black flex items-center justify-center"><Video className="h-8 w-8 text-white" /></div>}
+                              {isImageUrl(url) ? <img src={url} alt={`Mídia ${index + 1}`} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-black flex items-center justify-center"><Video className="h-8 w-8 text-white" /></div>}
                               <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                {url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? <ImageIcon className="h-6 w-6 text-white" /> : <Video className="h-6 w-6 text-white" />}
+                                {isImageUrl(url) ? <ImageIcon className="h-6 w-6 text-white" /> : <Video className="h-6 w-6 text-white" />}
                               </div>
                             </button>
                         ))}

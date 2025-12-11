@@ -1,11 +1,21 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
+const isLikelyImage = (url = "") => {
+  const hasImageExt = url.match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i);
+  const isUploadPath = url.includes('/uploads/'); // arquivos no backend podem vir sem extensão
+  return Boolean(hasImageExt || isUploadPath);
+};
+
+const isLikelyVideo = (url = "") => {
+  return Boolean(url.match(/\.(mp4|webm|ogg|mov)$/i));
+};
+
 export default function MediaViewerModal({ isOpen, onClose, mediaUrl }) {
   if (!isOpen || !mediaUrl) return null;
 
-  const isImage = mediaUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-  const isVideo = mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i);
+  const isImage = isLikelyImage(mediaUrl);
+  const isVideo = isLikelyVideo(mediaUrl);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
