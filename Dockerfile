@@ -44,6 +44,10 @@ ENV PORT=4001
 
 # Install backend deps
 COPY server/package*.json ./
+
+# Install build tools for native modules (better-sqlite3)
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+
 # Use npm install (not ci) due to lock mismatch across environments
 RUN npm install --omit=dev --no-audit --no-fund
 
