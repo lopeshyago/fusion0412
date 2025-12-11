@@ -72,7 +72,6 @@ import ChatList from "./ChatList";
 
 import ChatRoom from "./ChatRoom";
 
-import StudentSetup from "./StudentSetup";
 
 import Debug from "./Debug";
 
@@ -160,7 +159,6 @@ const PAGES = {
     
     ChatRoom: ChatRoom,
     
-    StudentSetup: StudentSetup,
     
     Debug: Debug,
     
@@ -268,7 +266,6 @@ function PagesContent() {
                 
                 <Route path="/ChatRoom" element={<ChatRoom />} />
                 
-                <Route path="/StudentSetup" element={<StudentSetup />} />
                 
                 <Route path="/Debug" element={<Debug />} />
                 

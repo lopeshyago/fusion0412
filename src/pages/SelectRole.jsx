@@ -449,22 +449,10 @@ export default function Index() {
         }
         // --- Fim da Lógica de Bloqueio ---
 
-        // *** LÓGICA DE DIRECIONAMENTO CORRIGIDA ***
-
-        // 1. Aluno: Direcionamento direto
+        // 1. Aluno: Direcionamento direto (sem tela de análise)
         if (currentUser.user_type === 'student') {
-          const isSetupComplete = currentUser.cpf &&
-                                  currentUser.phone &&
-                                  currentUser.address &&
-                                  currentUser.par_q_completed &&
-                                  currentUser.condominium_id;
-
-          if (!isSetupComplete) {
-            navigateTo('StudentSetup', {}, true);
-          } else {
-            setSelectedUserType('student');
-          }
-          return; // Finaliza a execução aqui para o aluno
+          setSelectedUserType('student');
+          return;
         }
 
         // 2. Instrutor: Direcionamento direto

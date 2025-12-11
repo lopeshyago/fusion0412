@@ -111,7 +111,6 @@ export default function Layout({ children, currentPageName }) {
   const pagesWithoutBottomNav = [
     "Index", 
     "InstructorRegistration", 
-    "StudentSetup",
     "StudentCheckin",
     "Planning",
     "InstructorAttendance",
@@ -303,4 +302,3 @@ export default function Layout({ children, currentPageName }) {
     </OfflineManager>
   );
 }
-
