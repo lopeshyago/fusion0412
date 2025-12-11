@@ -49,7 +49,7 @@ export default function InstructorStudents() {
           studentsFromApi.map(async (student) => {
             try {
               const [workouts, assessments] = await Promise.all([
-                Workout.filter({ student_id: student.id }),
+                Workout.filter({ user_id: student.id }),
                 PhysicalAssessment.filter({ student_id: student.id })
               ]);
               return {

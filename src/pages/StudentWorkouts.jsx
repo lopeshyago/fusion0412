@@ -30,6 +30,29 @@ export default function StudentWorkouts() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null); // New state for error handling
 
+  const normalizeWorkout = (row) => {
+    let data = {};
+    try {
+      data = typeof row.data === 'string' ? JSON.parse(row.data) : (row.data || {});
+    } catch {
+      data = {};
+    }
+    const studentId = row.user_id ?? data.student_id ?? data.user_id ?? null;
+    return {
+      ...data,
+      ...row,
+      id: row.id,
+      name: data.name || row.title || row.name || 'Treino',
+      title: row.title || data.name || row.name || 'Treino',
+      user_id: row.user_id ?? data.user_id ?? studentId,
+      student_id: studentId,
+      objective: data.objective || row.objective,
+      exercises: data.exercises || [],
+      sessions: data.sessions || row.sessions,
+      is_template: data.is_template ?? row.is_template ?? false,
+    };
+  };
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setError(null); // Clear any previous errors on new load attempt
@@ -37,12 +60,13 @@ export default function StudentWorkouts() {
       const currentUser = await User.me();
       setUser(currentUser);
       
-      // Buscar treinos atribuídos ao aluno
-      const assignedWorkouts = await Workout.filter({ student_id: currentUser.id });
-      setWorkouts(assignedWorkouts);
+      // Buscar treinos atribuídos ao aluno (campo user_id armazena o aluno)
+      const assignedWorkouts = await Workout.filter({ user_id: currentUser.id });
+      const normalized = assignedWorkouts.map(normalizeWorkout);
+      setWorkouts(normalized);
       
       // Buscar sessões de treino (histórico)
-      const sessions = await WorkoutSession.filter({ student_id: currentUser.id });
+      const sessions = await WorkoutSession.filter({ user_id: currentUser.id });
       setWorkoutSessions(sessions.sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at)));
     } catch (err) { // Renamed 'error' to 'err' to avoid conflict with state variable
       console.error('Erro ao carregar treinos:', err);
@@ -62,7 +86,7 @@ export default function StudentWorkouts() {
   const completeWorkout = async (workoutId, exercises, duration) => {
     try {
       await WorkoutSession.create({
-        student_id: user.id,
+        user_id: user.id,
         workout_id: workoutId,
         exercises_completed: exercises,
         completed_at: new Date().toISOString(),

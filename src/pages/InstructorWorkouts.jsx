@@ -449,7 +449,7 @@ export default function InstructorWorkouts() {
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              Criado em {new Date(workout.created_date).toLocaleDateString('pt-BR')}
+                              Criado em {new Date(workout.created_at || workout.created_date || Date.now()).toLocaleDateString('pt-BR')}
                             </span>
                           </div>
                         </div>

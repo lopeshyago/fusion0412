@@ -22,17 +22,43 @@ export default function AdminStudentWorkouts() {
 
   const studentId = new URLSearchParams(location.search).get('student_id');
 
+  const normalizeWorkout = (row) => {
+    let data = {};
+    try {
+      data = typeof row.data === 'string' ? JSON.parse(row.data) : (row.data || {});
+    } catch {
+      data = {};
+    }
+    const studentIdFromRow = row.user_id ?? data.student_id ?? data.user_id ?? null;
+    return {
+      ...data,
+      ...row,
+      id: row.id,
+      name: data.name || row.title || row.name || 'Treino',
+      title: row.title || data.name || row.name || 'Treino',
+      user_id: row.user_id ?? data.user_id ?? studentIdFromRow,
+      student_id: studentIdFromRow,
+      objective: data.objective || row.objective,
+      exercises: data.exercises || [],
+      sessions: data.sessions || row.sessions,
+      created_at: row.created_at || row.created_date || data.created_at,
+    };
+  };
+
   const loadData = useCallback(async () => {
     if (!studentId) return;
     setIsLoading(true);
     try {
       const [studentData, studentWorkouts, adminUser] = await Promise.all([
         User.get(studentId),
-        Workout.filter({ student_id: studentId }, '-created_date'),
+        Workout.filter({ user_id: Number(studentId) }),
         User.me()
       ]);
+      const normalized = studentWorkouts
+        .map(normalizeWorkout)
+        .sort((a, b) => new Date(b.created_at || b.created_date || 0) - new Date(a.created_at || a.created_date || 0));
       setStudent(studentData);
-      setWorkouts(studentWorkouts);
+      setWorkouts(normalized);
       setCurrentUser(adminUser);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
@@ -114,7 +140,7 @@ export default function AdminStudentWorkouts() {
                       <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                         <Badge variant="secondary">{workout.objective}</Badge>
                         <span className="flex items-center gap-1"><Dumbbell className="h-3 w-3" />{workout.exercises?.length || 0} exercícios</span>
-                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />Criado em {new Date(workout.created_date).toLocaleDateString('pt-BR')}</span>
+                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />Criado em {new Date(workout.created_at || workout.created_date || Date.now()).toLocaleDateString('pt-BR')}</span>
                       </div>
                     </div>
                     <div className="flex gap-2 self-start sm:self-center">

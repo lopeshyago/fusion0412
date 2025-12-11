@@ -201,7 +201,7 @@ export default function DetailedAssessmentForm({ isOpen, onOpenChange, studentId
         return;
     }
     try {
-      const assessmentData = {
+      const normalizedData = {
         student_id: studentId,
         instructor_id: instructorId,
         assessment_date: formData.assessment_date,
@@ -240,12 +240,19 @@ export default function DetailedAssessmentForm({ isOpen, onOpenChange, studentId
         calculated_metrics: metrics
       };
 
+      const payload = {
+        user_id: studentId,
+        instructor_id: instructorId,
+        assessment_date: formData.assessment_date,
+        data: JSON.stringify(normalizedData)
+      };
+
       if (assessmentToEdit) {
         // Atualizar avaliação existente
-        await DetailedAssessment.update(assessmentToEdit.id, assessmentData);
+        await DetailedAssessment.update(assessmentToEdit.id, payload);
       } else {
         // Criar nova avaliação
-        await DetailedAssessment.create(assessmentData);
+        await DetailedAssessment.create(payload);
       }
       onSave(); // Sinaliza que a operação foi concluída
     } catch (error) {

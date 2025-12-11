@@ -47,7 +47,7 @@ export default function StudentDetail() {
       const [currentUser, allUsers, studentWorkouts, studentAssessments] = await Promise.all([
         UserEntity.me(),
         UserEntity.list(),
-        Workout.filter({ student_id: studentId }),
+        Workout.filter({ user_id: Number(studentId) }),
         PhysicalAssessment.filter({ student_id: studentId })
       ]);
       

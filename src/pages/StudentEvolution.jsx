@@ -19,6 +19,38 @@ export default function StudentEvolution() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const normalizeAssessment = (row) => {
+    let data = {};
+    try {
+      data = typeof row.data === 'string' ? JSON.parse(row.data) : (row.data || {});
+    } catch {
+      data = {};
+    }
+    const studentId = row.user_id ?? data.student_id ?? data.user_id ?? null;
+    return {
+      ...data,
+      ...row,
+      id: row.id,
+      student_id: studentId,
+      user_id: row.user_id ?? data.user_id ?? studentId,
+      instructor_id: row.instructor_id ?? data.instructor_id ?? null,
+      assessment_date: row.assessment_date || data.assessment_date,
+      weight: data.weight ?? row.weight,
+      height: data.height ?? row.height,
+      age: data.age ?? row.age,
+      sex: data.sex ?? row.sex,
+      skinfolds: data.skinfolds || row.skinfolds || {},
+      circumferences: data.circumferences || row.circumferences || {},
+      calculated_metrics: data.calculated_metrics || row.calculated_metrics || {},
+    };
+  };
+
+  const formatAssessmentDate = (assessment) => {
+    const assessmentDate = assessment?.assessment_date || assessment?.created_at;
+    if (!assessmentDate) return '--';
+    return format(parseISO(assessmentDate), 'dd/MM/yyyy', { locale: ptBR });
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -33,12 +65,13 @@ export default function StudentEvolution() {
       console.log('Carregando avaliações para o usuário:', currentUser.id);
       
       const userAssessments = await DetailedAssessment.filter({ 
-        student_id: currentUser.id 
+        user_id: currentUser.id 
       });
+      const normalizedAssessments = userAssessments.map(normalizeAssessment);
       
       console.log('Avaliações encontradas:', userAssessments);
       
-      const sortedAssessments = userAssessments.sort((a, b) => 
+      const sortedAssessments = normalizedAssessments.sort((a, b) => 
         new Date(b.assessment_date) - new Date(a.assessment_date)
       );
       
@@ -120,7 +153,7 @@ export default function StudentEvolution() {
                     >
                       <div>
                         <p className="font-medium text-gray-800">
-                          Avaliação #{assessments.length - index} - {format(parseISO(assessment.assessment_date), 'dd/MM/yyyy', { locale: ptBR })}
+                          Avaliação #{assessments.length - index} - {formatAssessmentDate(assessment)}
                         </p>
                         <div className="flex gap-4 text-sm text-gray-600">
                           <span>Peso: {assessment.weight}kg</span>

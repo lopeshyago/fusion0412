@@ -21,17 +21,46 @@ export default function AdminStudentAssessments() {
   
   const studentId = new URLSearchParams(location.search).get('student_id');
 
+  const normalizeAssessment = (row) => {
+    let data = {};
+    try {
+      data = typeof row.data === 'string' ? JSON.parse(row.data) : (row.data || {});
+    } catch {
+      data = {};
+    }
+    const studentIdFromRow = row.user_id ?? data.student_id ?? data.user_id ?? null;
+    return {
+      ...data,
+      ...row,
+      id: row.id,
+      student_id: studentIdFromRow,
+      user_id: row.user_id ?? data.user_id ?? studentIdFromRow,
+      instructor_id: row.instructor_id ?? data.instructor_id ?? null,
+      assessment_date: row.assessment_date || data.assessment_date,
+      weight: data.weight ?? row.weight,
+      height: data.height ?? row.height,
+      age: data.age ?? row.age,
+      sex: data.sex ?? row.sex,
+      skinfolds: data.skinfolds || row.skinfolds || {},
+      circumferences: data.circumferences || row.circumferences || {},
+      calculated_metrics: data.calculated_metrics || row.calculated_metrics || {},
+    };
+  };
+
   const loadData = useCallback(async () => {
     if (!studentId) return;
     setIsLoading(true);
     try {
       const [studentData, studentAssessments, adminUser] = await Promise.all([
         User.get(studentId),
-        DetailedAssessment.filter({ student_id: studentId }, '-assessment_date'),
+        DetailedAssessment.filter({ user_id: Number(studentId) }),
         User.me()
       ]);
+      const normalizedAssessments = studentAssessments
+        .map(normalizeAssessment)
+        .sort((a, b) => new Date(b.assessment_date) - new Date(a.assessment_date));
       setStudent(studentData);
-      setAssessments(studentAssessments);
+      setAssessments(normalizedAssessments);
       setCurrentUser(adminUser);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);

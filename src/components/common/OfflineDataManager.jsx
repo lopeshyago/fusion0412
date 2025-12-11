@@ -195,7 +195,7 @@ export const OfflineDataPreloader = ({ children }) => {
 
         // Precarregar treinos do usuário se for aluno
         if (user?.user_type === 'student') {
-          const workouts = await Workout.filter({ student_id: user.id });
+          const workouts = await Workout.filter({ user_id: user.id });
           cache.set(`${cache.CACHE_KEYS.WORKOUTS}_${user.id}`, workouts, cache.CACHE_DURATION.MEDIUM);
         }
 

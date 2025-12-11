@@ -31,6 +31,32 @@ export default function InstructorAssessments() {
   const [historyStudent, setHistoryStudent] = useState(null);
   const [editingAssessment, setEditingAssessment] = useState(null);
 
+  const normalizeAssessment = (row) => {
+    let data = {};
+    try {
+      data = typeof row.data === 'string' ? JSON.parse(row.data) : (row.data || {});
+    } catch {
+      data = {};
+    }
+    const studentId = row.user_id ?? data.student_id ?? data.user_id ?? null;
+    return {
+      ...data,
+      ...row,
+      id: row.id,
+      student_id: studentId,
+      user_id: row.user_id ?? data.user_id ?? studentId,
+      instructor_id: row.instructor_id ?? data.instructor_id ?? null,
+      assessment_date: row.assessment_date || data.assessment_date,
+      weight: data.weight ?? row.weight,
+      height: data.height ?? row.height,
+      age: data.age ?? row.age,
+      sex: data.sex ?? row.sex,
+      skinfolds: data.skinfolds || row.skinfolds || {},
+      circumferences: data.circumferences || row.circumferences || {},
+      calculated_metrics: data.calculated_metrics || row.calculated_metrics || {},
+    };
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -83,10 +109,11 @@ export default function InstructorAssessments() {
       console.log('Alunos encontrados:', studentsQuery.length);
 
       const allAssessments = await DetailedAssessment.list('-assessment_date');
+      const normalizedAssessments = allAssessments.map(normalizeAssessment);
 
       // Enriquecer dados dos alunos com última avaliação
       const studentsWithAssessments = studentsQuery.map(student => {
-        const studentAssessments = allAssessments.filter(a => a.student_id === student.id);
+        const studentAssessments = normalizedAssessments.filter(a => a.student_id === student.id);
         return {
           ...student,
           lastAssessment: studentAssessments[0] || null,
@@ -107,7 +134,7 @@ export default function InstructorAssessments() {
         setSelectedCondoId("all");
       }
       
-      setAssessments(allAssessments);
+      setAssessments(normalizedAssessments);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       if (error.response?.status === 429) {
