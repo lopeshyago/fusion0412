@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, ArrowLeft, User, Image as ImageIcon } from 'lucide-react';
+import { Save, ArrowLeft, User as UserIcon } from 'lucide-react';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useOptimizedNavigation } from "../components/common/NavigationHelper";
 
 export default function AdminProfile() {
@@ -25,7 +26,7 @@ export default function AdminProfile() {
           full_name: me?.full_name || '',
           phone: me?.phone || '',
           avatar_url: me?.avatar_url || '',
-          cpf: me?.cpf || '',
+          cpf: me?.cpf ? me.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : '',
           address: me?.address || '',
           email: me?.email || ''
         };
@@ -39,31 +40,48 @@ export default function AdminProfile() {
     })();
   }, []);
 
-  const handleChange = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    if (id === 'cpf') {
+      const cpfValue = value.replace(/\D/g, "");
+      const formatted = cpfValue
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d)/, "$1.$2")
+        .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+        .replace(/(-\d{2})\d+?$/, "$1");
+      setForm(prev => ({ ...prev, cpf: formatted }));
+    } else {
+      setForm(prev => ({ ...prev, [id]: value }));
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true); setError(''); setOk('');
     try {
       const { User } = await import('@/api/entities_new');
+      let avatarUrl = form.avatar_url;
       if (avatarFile) {
         try {
           const { localApi } = await import('@/api/localApi');
           const up = await localApi.uploadFile(avatarFile);
           if (up?.url) {
-            form.avatar_url = up.url;
+            avatarUrl = up.url;
+            setAvatarPreview(avatarUrl);
           }
         } catch (e) { console.error('Falha no upload do avatar', e); }
       }
+      const cpfNumbers = form.cpf.replace(/\D/g, "");
       await User.updateMyUserData({
         full_name: form.full_name,
         phone: form.phone,
-        cpf: form.cpf,
+        cpf: cpfNumbers,
         address: form.address,
-        avatar_url: form.avatar_url,
-        email: form.email // only used for display; backend ignores if not allowed
+        avatar_url: avatarUrl,
+        plan_status: 'active',
+        user_type: 'admin'
       });
       setOk('Perfil atualizado com sucesso.');
-      navigateTo('AdminDashboard', {}, true);
+      setTimeout(() => navigateTo('AdminDashboard'), 1000);
     } catch (e) {
       setError('Não foi possível salvar as alterações.');
     } finally {
@@ -71,88 +89,89 @@ export default function AdminProfile() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const { User } = await import('@/api/entities_new');
-      await User.logout();
-    } catch {}
-    navigateTo('Index', {}, true);
-  };
-
-  if (loading) return null;
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100">
-      <header className="bg-black text-white p-4 shadow-xl">
-        <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <User className="h-6 w-6" />
-            <span className="text-xl font-bold">Meu Perfil (Admin)</span>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 p-4 flex items-center justify-center">
+      <Card className="w-full max-w-2xl shadow-2xl">
+        <CardHeader className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-orange-700">
+              <UserIcon className="h-6 w-6" />
+              <div>
+                <CardTitle className="text-lg">Meu Perfil (Admin)</CardTitle>
+                <CardDescription>Atualize seus dados e mantenha o acesso ao painel.</CardDescription>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => navigateTo('AdminDashboard')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigateTo('AdminDashboard')} className="text-white hover:bg-white/20">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
-        </div>
-      </header>
-
-      <div className="container mx-auto p-4 max-w-2xl">
-        <Card className="border-orange-200">
-          <CardHeader>
-            <CardTitle>Dados do Administrador</CardTitle>
-            <CardDescription>Edite suas informações básicas.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {error && <div className="p-3 bg-red-100 border border-red-200 text-red-700 text-sm">{error}</div>}
-            {ok && <div className="p-3 bg-green-100 border border-green-200 text-green-700 text-sm">{ok}</div>}
-            <div className="space-y-2">
-              <Label>E-mail</Label>
-              <Input value={form.email} onChange={e => handleChange('email', e.target.value)} className="border-orange-200" />
-            </div>
-            <div className="space-y-2">
-              <Label>Nome completo</Label>
-              <Input value={form.full_name} onChange={e => handleChange('full_name', e.target.value)} className="border-orange-200" />
-            </div>
-            <div className="space-y-2">
-              <Label>Telefone</Label>
-              <Input value={form.phone} onChange={e => handleChange('phone', e.target.value)} className="border-orange-200" />
-            </div>
-            <div className="space-y-2">
-              <Label>CPF</Label>
-              <Input value={form.cpf} onChange={e => handleChange('cpf', e.target.value)} className="border-orange-200" />
-            </div>
-            <div className="space-y-2">
-              <Label>EndereÇõ</Label>
-              <Input value={form.address} onChange={e => handleChange('address', e.target.value)} className="border-orange-200" />
-            </div>
-            <div className="space-y-2">
+          {error && <div className="p-3 bg-red-100 border border-red-200 text-red-700 text-sm rounded-md">{error}</div>}
+          {ok && <div className="p-3 bg-green-100 border border-green-200 text-green-700 text-sm rounded-md">{ok}</div>}
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-center flex-col gap-2">
+            {avatarPreview ? (
+              <img src={avatarPreview} alt="Prévia do avatar" className="h-24 w-24 rounded-full object-cover border" />
+            ) : (
+              <Avatar className="h-24 w-24">
+                <AvatarFallback className="bg-orange-100 text-orange-700 text-2xl">
+                  {form.full_name?.charAt(0) || "A"}
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <div className="w-full">
               <Label>Foto do Perfil</Label>
-              {avatarPreview && (
-                <img src={avatarPreview} alt="Prévia do avatar" className="h-24 w-24 rounded-full object-cover mb-2 border" />
-              )}
-              <div className="flex items-center gap-2">
-                <Input type="file" accept="image/*" onChange={e => {
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
                   const f = e.target.files?.[0] || null;
                   setAvatarFile(f);
                   if (f) {
-                    const url = URL.createObjectURL(f);
-                    setAvatarPreview(url);
+                    setAvatarPreview(URL.createObjectURL(f));
                   } else {
-                    setAvatarPreview(form.avatar_url || '');
+                    setAvatarPreview(form.avatar_url || "");
                   }
-                }} className="border-orange-200" />
-                <Button type="button" variant="outline" onClick={() => { setAvatarFile(null); setAvatarPreview(form.avatar_url || ''); }}>
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Limpar
-                </Button>
-              </div>
+                }}
+              />
             </div>
-            <Button onClick={handleSave} disabled={saving} className="bg-orange-500 hover:bg-orange-600">
-              <Save className="h-4 w-4 mr-2" /> {saving ? 'Salvando...' : 'Salvar' }
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="full_name">Nome Completo *</Label>
+              <Input id="full_name" value={form.full_name} onChange={handleChange} />
+            </div>
+            <div>
+              <Label htmlFor="cpf">CPF *</Label>
+              <Input id="cpf" value={form.cpf} onChange={handleChange} maxLength={14} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="phone">Telefone/WhatsApp *</Label>
+              <Input id="phone" value={form.phone} onChange={handleChange} />
+            </div>
+            <div>
+              <Label htmlFor="email">E-mail</Label>
+              <Input id="email" value={form.email} onChange={handleChange} />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="address">Endereço Completo *</Label>
+            <Input id="address" value={form.address} onChange={handleChange} />
+          </div>
+
+          <Button onClick={handleSave} disabled={saving} className="w-full fusion-gradient">
+            <Save className="h-4 w-4 mr-2" /> {saving ? 'Salvando...' : 'Salvar Perfil'}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
