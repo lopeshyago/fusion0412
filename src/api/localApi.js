@@ -28,7 +28,8 @@ class LocalApiClient {
     }
 
     const isAuthEndpoint = endpoint.startsWith('/auth');
-    const isPublic = isAuthEndpoint || endpoint.startsWith('/components/pwa');
+    const isRegisterEndpoint = endpoint.startsWith('/register');
+    const isPublic = isAuthEndpoint || isRegisterEndpoint || endpoint.startsWith('/components/pwa');
     if (!this.token && !isPublic) {
       // Evita chamadas sem token que só gerariam 401 e spam no console
       throw new Error('API Error: 401 - {"error":"No token"}');
