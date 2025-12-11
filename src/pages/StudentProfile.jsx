@@ -241,8 +241,8 @@ export default function StudentProfile() {
             });
             
             setIsEditing(false);
-            setSuccess("Dados salvos com sucesso!");
-            setTimeout(() => setSuccess(""), 3000);
+            setSuccess("Dados salvos com sucesso! Redirecionando para seu painel...");
+            setTimeout(() => navigateTo('Index', {}, true), 1200);
         } catch(err) {
             console.error("Erro ao salvar perfil:", err);
             setError("Não foi possível salvar os dados. Tente novamente.");
