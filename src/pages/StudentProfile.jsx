@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MapPin, Save, User as UserIcon, Phone, Mail, Cake, Calendar, Building2, FileText, Shield, Camera, LogOut } from "lucide-react";
@@ -358,7 +358,7 @@ export default function StudentProfile() {
 
                 {/* Profile Header section (integrated into new Card layout) */}
                 <Card className="shadow-lg border-orange-200 mb-6"> {/* Added mb-6 for spacing */}
-                    <CardContent className="p-4 md:p-8"> // Corrigido
+                    <CardContent className="p-4 md:p-8">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center"> {/* Added items-center for vertical alignment */}
                             {/* Left column: Avatar and Photo Upload */}
                             <div className="md:col-span-1 flex flex-col items-center">
@@ -483,8 +483,10 @@ export default function StudentProfile() {
                                     <Label htmlFor="full_name">Nome Completo</Label>
                                     {isEditing ? (
                                         <>
-                                            <Input // Corrigido
+                                            <Input
                                                 id="full_name"
+                                                name="full_name"
+                                                autoComplete="name"
                                                 {...register("full_name", { required: "Nome completo é obrigatório" })}
                                                 className="border-orange-200"
                                             />
@@ -501,14 +503,16 @@ export default function StudentProfile() {
                                          <>
                                             <Input
                                                 id="cpf"
-                                                {...register("cpf", {  // Corrigido
+                                                name="cpf"
+                                                autoComplete="off"
+                                                {...register("cpf", {
                                                     required: "CPF é obrigatório",
-                                                    validate: value => validateCpf(value) || "CPF invÃ¡lido"
+                                                    validate: value => validateCpf(value) || "CPF inválido"
                                                 })}
                                                 onChange={handleCpfChange}
                                                 className="border-orange-200"
                                                 maxLength={14}
-                                            />
+                                             />
                                             {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf.message}</p>}
                                         </>
                                     ) : (
@@ -544,8 +548,10 @@ export default function StudentProfile() {
                                     {isEditing ? (
                                         <div className="relative">
                                             <Cake className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                                            <Input // Corrigido
+                                            <Input
                                                 id="date_of_birth"
+                                                name="date_of_birth"
+                                                autoComplete="bday"
                                                 type="date"
                                                 {...register("date_of_birth", { 
                                                     required: "Data de nascimento é obrigatória",
@@ -587,8 +593,10 @@ export default function StudentProfile() {
                                         <div className="relative">
                                             <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                                             <Input
-                                                id="phone" // Corrigido
-                                                {...register("phone", { required: "Telefone Ã© obrigatÃ³rio" })}
+                                                id="phone"
+                                                name="phone"
+                                                autoComplete="tel"
+                                                {...register("phone", { required: "Telefone é obrigatório" })}
                                                 className="border-orange-200 pl-10"
                                             />
                                             {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
@@ -606,6 +614,8 @@ export default function StudentProfile() {
                                         <>
                                             <Input
                                                 id="address"
+                                                name="address"
+                                                autoComplete="street-address"
                                                 {...register("address", { required: "Endereço é obrigatório" })}
                                                 className="border-orange-200"
                                             />
@@ -615,39 +625,25 @@ export default function StudentProfile() {
                                         <p className="p-2 bg-gray-50 rounded border">{formData.address || "Não informado"}</p>
                                     )}
                                 </div>
-                                <div className="space-y-2"><Label htmlFor="block">Bloco</Label><Input id="block" {...register("block")} className="border-orange-200" /></div>
-                                <div className="space-y-2"><Label htmlFor="apartment">Apartamento</Label><Input id="apartment" {...register("apartment")} className="border-orange-200" /></div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="block">Bloco</Label>
+                                    {isEditing ? (
+                                        <Input id="block" name="block" autoComplete="address-line2" {...register("block")} className="border-orange-200" />
+                                    ) : (
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.block || "Não informado"}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="apartment">Apartamento</Label>
+                                    {isEditing ? (
+                                        <Input id="apartment" name="apartment" autoComplete="address-line2" {...register("apartment")} className="border-orange-200" />
+                                    ) : (
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.apartment || "Não informado"}</p>
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="space-y-2" hidden>
-                                <Label htmlFor="address">Endereço Completo</Label>
-                                {isEditing ? (
-                                     <>
-                                        <Input // Corrigido
-                                            id="address"
-                                            {...register("address", { required: "EndereÃ§o Ã© obrigatÃ³rio" })}
-                                            className="border-orange-200"
-                                        />
-                                        {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>}
-                                    </>
-                                ) : (
-                                    <p className="p-2 bg-gray-50 rounded border">{formData.address || "NÃ£o informado"}</p>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {isEditing && isFirstAccess(user || {}) && ( // Only show this specific button for first access editing
-                        <div className="mt-6">
-                            <Button 
-                                type="submit" 
-                                className="w-full bg-orange-500 hover:bg-orange-600 text-lg py-6"
-                                disabled={isSaving}
-                            >
-                                <Save className="h-5 w-5 mr-2" />
-                                {isSaving ? 'Salvando...' : 'Salvar Cadastro e Acessar'}
-                            </Button>
-                        </div>
+                            
                     )}
                 </form>
 
@@ -693,7 +689,7 @@ export default function StudentProfile() {
                              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
                                  <div className="flex items-center gap-2 mb-2">
                                      <FileText className="h-4 w-4 text-yellow-600" />
-                                     <span className="font-medium text-yellow-800">PAR-Q Pendente</span> // Corrigido
+                                     <span className="font-medium text-yellow-800">PAR-Q Pendente</span>
                                  </div>
                                  <p className="text-yellow-700 text-sm mb-3">Responda o questionÃ¡rio para ter acesso completo.</p>
                                  <Button size="sm" variant="outline" className="border-yellow-300 text-yellow-800 hover:bg-yellow-100" onClick={() => navigateTo(createPageUrl("Parq"))}> {/* Updated to use navigateTo */}
@@ -733,13 +729,15 @@ export default function StudentProfile() {
                         ) : (
                             <div className="space-y-4">
                                 <p className="text-gray-600">Você ainda não está associado a um local de treino.</p>
-                                <div className="flex gap-3">
-                                    <Input
-                                        placeholder="Código de convite"
-                                        value={inviteCode}
-                                        onChange={(e) => setInviteCode(e.target.value)}
-                                        className="border-orange-200"
-                                    />
+                                    <div className="flex gap-3">
+                                        <Input
+                                            id="invite_code"
+                                            name="invite_code"
+                                            placeholder="Código de convite"
+                                            value={inviteCode}
+                                            onChange={(e) => setInviteCode(e.target.value)}
+                                            className="border-orange-200"
+                                        />
                                     <Button onClick={handleAssociateCondo} className="bg-orange-500 hover:bg-orange-600">
                                         Associar
                                     </Button>
