@@ -184,58 +184,67 @@ export default function StudentProfile() {
         setError("");
         setSuccess("");
         setIsSaving(true);
-        
-        const wasFirstAccess = isFirstAccess(user || {});
+
+        const cpfNumbers = data.cpf.replace(/\D/g, '');
+        if (cpfNumbers.length !== 11) {
+            setError("CPF deve ter 11 dígitos.");
+            setIsSaving(false);
+            return;
+        }
 
         try {
-            const age = calculateAge(data.date_of_birth);
-            
+            let avatarUrl = data.avatar_url || "";
+            if (avatarFile) {
+                try {
+                    const { localApi } = await import('@/api/localApi');
+                    const up = await localApi.uploadFile(avatarFile);
+                    if (up?.url) {
+                        avatarUrl = up.url;
+                        setAvatarPreview(avatarUrl);
+                    }
+                } catch (e) {
+                    console.warn("Falha no upload do avatar; mantendo valor anterior.", e);
+                }
+            }
+
             const updateData = {
                 full_name: data.full_name,
                 phone: data.phone,
                 block: data.block,
                 apartment: data.apartment,
                 address: data.address,
-                cpf: data.cpf.replace(/\D/g, ''),
+                cpf: cpfNumbers,
                 date_of_birth: data.date_of_birth,
                 sex: data.sex,
-                age: age,
-                avatar_url: data.avatar_url,
+                avatar_url: avatarUrl,
                 plan_status: user?.plan_status || 'active',
-                user_type: user?.user_type || 'student'
+                user_type: 'student'
             };
             
             await User.updateMyUserData(updateData);
+
+            const updatedUser = await User.me();
+            setUser(updatedUser);
             
-            if (wasFirstAccess) {
-                setSuccess("Cadastro completo! Redirecionando para o seu painel...");
-                setTimeout(() => {
-                    navigateTo(createPageUrl("Index"), { replace: true }); // UPDATED navigateTo
-                }, 2000);
-            } else {
-                const updatedUser = await User.me();
-                setUser(updatedUser);
-                
-                const calculatedAge = calculateAge(updatedUser.date_of_birth);
-                reset({
-                    full_name: updatedUser.full_name || "",
-                    phone: updatedUser.phone || "",
-                    age: calculatedAge,
-                    date_of_birth: updatedUser.date_of_birth || "",
-                    address: updatedUser.address || "",
-                    cpf: updatedUser.cpf ? updatedUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : "",
-                    avatar_url: updatedUser.avatar_url || "",
-                    sex: updatedUser.sex || "",
-                    block: updatedUser.block || "",
-                    apartment: updatedUser.apartment || ""
-                });
-                
-                setIsEditing(false);
-                setSuccess("Dados salvos com sucesso!");
-                setTimeout(() => setSuccess(""), 3000);
-            }
+            const calculatedAge = calculateAge(updatedUser.date_of_birth);
+            reset({
+                full_name: updatedUser.full_name || "",
+                phone: updatedUser.phone || "",
+                age: calculatedAge,
+                date_of_birth: updatedUser.date_of_birth || "",
+                address: updatedUser.address || "",
+                cpf: updatedUser.cpf ? updatedUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : "",
+                avatar_url: updatedUser.avatar_url || "",
+                sex: updatedUser.sex || "",
+                block: updatedUser.block || "",
+                apartment: updatedUser.apartment || ""
+            });
+            
+            setIsEditing(false);
+            setSuccess("Dados salvos com sucesso!");
+            setTimeout(() => setSuccess(""), 3000);
         } catch(err) {
-            console.error("Erro ao salvar perfil:", err); // Corrigido
+            console.error("Erro ao salvar perfil:", err);
             setError("Não foi possível salvar os dados. Tente novamente.");
         } finally {
             setIsSaving(false);
@@ -310,7 +319,7 @@ export default function StudentProfile() {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
-                <div className="text-center"> // Corrigido
+                <div className="text-center">
                     <p className="text-gray-600 text-lg">Carregando...</p>
                 </div>
             </div>
