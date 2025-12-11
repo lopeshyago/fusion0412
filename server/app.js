@@ -576,6 +576,16 @@ app.put('/profile', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const data = req.body || {};
+    // Garantir coluna 'sex' mesmo que migrações anteriores não tenham sido aplicadas
+    try {
+      const pCols = await allSql('PRAGMA table_info(profiles)');
+      const pNames = new Set(pCols.map(c => c.name));
+      if (!pNames.has('sex')) {
+        await runSql('ALTER TABLE profiles ADD COLUMN sex TEXT');
+      }
+    } catch (e) {
+      console.warn('Falha ao garantir coluna sex em profiles:', e?.message);
+    }
     const userAllowed = ['user_type','cpf','phone','plan_status','address','par_q_completed','par_q_has_risk','medical_certificate_url','medical_certificate_required_date','condominium_id','account_blocked', 'date_of_birth', 'block', 'apartment', 'guardian_name', 'guardian_contact', 'doctor_name', 'doctor_crm'];
     const profileAllowed = ['full_name','avatar_url','role','sex'];
     const userUpdates = Object.fromEntries(Object.entries(data).filter(([k]) => userAllowed.includes(k)));
