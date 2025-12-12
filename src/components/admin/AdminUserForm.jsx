@@ -23,6 +23,27 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
     return `(${part1}${part1.length === 2 ? ')' : ''}${middle}${end}`.trim();
   };
 
+  const formatCep = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+  };
+
+  const fetchAddressByCep = async (value) => {
+    const digits = (value || '').replace(/\D/g, '');
+    if (digits.length !== 8) return;
+    try {
+      const resp = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await resp.json();
+      if (data && !data.erro) {
+        setValue('address', data.logradouro || '');
+        setValue('neighborhood', data.bairro || '');
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
   useEffect(() => {
     const loadCondos = async () => {
       try {
@@ -45,6 +66,10 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
       setValue('date_of_birth', user.date_of_birth || '');
       setValue('block', user.block || '');
       setValue('apartment', user.apartment || '');
+      setValue('cep', user.cep ? formatCep(user.cep) : '');
+      setValue('address', user.address || '');
+      setValue('address_number', user.address_number || '');
+      setValue('neighborhood', user.neighborhood || '');
       setValue('condominium_id', user.condominium_id != null ? String(user.condominium_id) : '');
       setSelectedUserType(user.user_type || 'student');
     } else {
@@ -65,6 +90,10 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
         date_of_birth: data.date_of_birth || null,
         block: data.block || '',
         apartment: data.apartment || '',
+        cep: data.cep ? data.cep.replace(/\D/g, '') : '',
+        address: data.address || '',
+        address_number: data.address_number || '',
+        neighborhood: data.neighborhood || '',
         user_type: selectedUserType,
         condominium_id: data.condominium_id ? Number(data.condominium_id) : null,
       };
@@ -127,6 +156,30 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
           <div>
             <Label htmlFor="cpf">CPF</Label>
             <Input id="cpf" {...register('cpf')} />
+          </div>
+          <div>
+            <Label htmlFor="cep">CEP</Label>
+            <Input
+              id="cep"
+              {...register('cep')}
+              maxLength={9}
+              onChange={(e) => setValue('cep', formatCep(e.target.value))}
+              onBlur={(e) => fetchAddressByCep(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="address">Endereço</Label>
+            <Input id="address" {...register('address')} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="address_number">Número</Label>
+              <Input id="address_number" {...register('address_number')} />
+            </div>
+            <div>
+              <Label htmlFor="neighborhood">Bairro</Label>
+              <Input id="neighborhood" {...register('neighborhood')} />
+            </div>
           </div>
           <div>
             <Label htmlFor="date_of_birth">Data de Nascimento</Label>

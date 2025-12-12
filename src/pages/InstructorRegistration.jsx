@@ -18,6 +18,10 @@ export default function InstructorRegistration() {
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [cep, setCep] = useState("");
+  const [address, setAddress] = useState("");
+  const [addressNumber, setAddressNumber] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,13 +45,34 @@ export default function InstructorRegistration() {
       .replace(/(-\d{2})\d+?$/, "$1");
   };
 
+  const formatCep = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+  };
+
+  const fetchAddressByCep = async (value) => {
+    const digits = (value || '').replace(/\D/g, '');
+    if (digits.length !== 8) return;
+    try {
+      const resp = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await resp.json();
+      if (data && !data.erro) {
+        setAddress(data.logradouro || "");
+        setNeighborhood(data.bairro || "");
+      }
+    } catch (e) {
+      // silencioso
+    }
+  };
+
   const handleBackToMenu = () => {
     window.location.href = createPageUrl('Index');
   };
 
   const handleRegister = async () => {
     const cpfDigits = cpf.replace(/\D/g, '');
-    if (!inviteCode.trim() || !email || !password || !fullName || !dateOfBirth || !cpfDigits || !phone || !emergencyPhone) {
+    if (!inviteCode.trim() || !email || !password || !fullName || !dateOfBirth || !cpfDigits || !phone || !emergencyPhone || !cep || !address || !neighborhood || !addressNumber) {
       setError("Preencha todos os campos.");
       return;
     }
@@ -63,7 +88,7 @@ export default function InstructorRegistration() {
       const res = await localApi.request("/register/instructor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name: fullName, invite_code: inviteCode.trim(), date_of_birth: dateOfBirth, cpf: cpfDigits, phone: phoneDigits, emergency_phone: emergencyPhoneDigits })
+        body: JSON.stringify({ email, password, full_name: fullName, invite_code: inviteCode.trim(), date_of_birth: dateOfBirth, cpf: cpfDigits, phone: phoneDigits, emergency_phone: emergencyPhoneDigits, cep: cep.replace(/\D/g, ''), address, address_number: addressNumber, neighborhood })
       });
       if (res?.token) {
         localApi.setToken(res.token);
@@ -143,6 +168,31 @@ export default function InstructorRegistration() {
                 autoComplete="tel"
                 placeholder="(11) 90000-0000"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>CEP</Label>
+              <Input
+                value={cep}
+                onChange={(e) => setCep(formatCep(e.target.value))}
+                onBlur={(e) => fetchAddressByCep(e.target.value)}
+                className="border-orange-200"
+                maxLength={9}
+                placeholder="00000-000"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Endereço</Label>
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} className="border-orange-200" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Número</Label>
+                <Input value={addressNumber} onChange={(e) => setAddressNumber(e.target.value)} className="border-orange-200" />
+              </div>
+              <div className="space-y-2">
+                <Label>Bairro</Label>
+                <Input value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} className="border-orange-200" />
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Data de Nascimento</Label>

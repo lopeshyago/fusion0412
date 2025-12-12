@@ -30,6 +30,10 @@ export default function StudentRegistration() {
   const [guardianContact, setGuardianContact] = useState('');
   const [doctorName, setDoctorName] = useState('');
   const [doctorCrm, setDoctorCrm] = useState('');
+  const [cep, setCep] = useState('');
+  const [address, setAddress] = useState('');
+  const [addressNumber, setAddressNumber] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -56,9 +60,30 @@ export default function StudentRegistration() {
     return `(${part1}${part1.length === 2 ? ')' : ''}${middle}${end}`.trim();
   };
 
+  const formatCep = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+  };
+
+  const fetchAddressByCep = async (value) => {
+    const digits = (value || '').replace(/\D/g, '');
+    if (digits.length !== 8) return;
+    try {
+      const resp = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await resp.json();
+      if (data && !data.erro) {
+        setAddress(data.logradouro || '');
+        setNeighborhood(data.bairro || '');
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
-    if (!email || !password || !fullName || !condoCode || !dateOfBirth || !cpf || !phone || !emergencyPhone) {
+    if (!email || !password || !fullName || !condoCode || !dateOfBirth || !cpf || !phone || !emergencyPhone || !cep || !address || !neighborhood || !addressNumber) {
       setError('Preencha todos os campos obrigatórios.');
       return;
     }
@@ -82,6 +107,10 @@ export default function StudentRegistration() {
           cpf,
           block,
           apartment,
+          cep: cep.replace(/\D/g, ''),
+          address,
+          address_number: addressNumber,
+          neighborhood,
           guardian_name: guardianName,
           guardian_contact: guardianContact,
           doctor_name: doctorName,
@@ -159,6 +188,31 @@ export default function StudentRegistration() {
                   autoComplete="tel"
                   placeholder="(11) 90000-0000"
                 />
+              </div>
+              <div className="space-y-1">
+                <Label>CEP</Label>
+                <Input
+                  value={cep}
+                  onChange={(e) => setCep(formatCep(e.target.value))}
+                  onBlur={(e) => fetchAddressByCep(e.target.value)}
+                  className="border-orange-200"
+                  maxLength={9}
+                  placeholder="00000-000"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Endereço</Label>
+                <Input value={address} onChange={(e) => setAddress(e.target.value)} className="border-orange-200" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Número</Label>
+                  <Input value={addressNumber} onChange={(e) => setAddressNumber(e.target.value)} className="border-orange-200" />
+                </div>
+                <div className="space-y-1">
+                  <Label>Bairro</Label>
+                  <Input value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} className="border-orange-200" />
+                </div>
               </div>
               <div className="space-y-1">
                 <Label>Senha</Label>

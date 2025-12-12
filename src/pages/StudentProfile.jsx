@@ -1,4 +1,4 @@
-﻿﻿
+?
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { MapPin, Save, User as UserIcon, Phone, Mail, Cake, Calendar, Building2,
 import { createPageUrl } from '@/utils';
 import { User } from "@/api/entities_new";
 import { Condominium } from "@/api/entities_new";
-// upload serÃ¡ feito via localApi.uploadFile
+// upload será feito via localApi.uploadFile
 import BottomNavBar from "../components/student/BottomNavBar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -60,7 +60,7 @@ export default function StudentProfile() {
     const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm();
     const formData = watch();
 
-    // FunÃ§Ã£o para calcular idade precisa
+    // Função para calcular idade precisa
     const calculateAge = (birthDate) => {
         if (!birthDate) return "";
         
@@ -77,7 +77,7 @@ export default function StudentProfile() {
         return age;
     };
 
-  // Detectar se é primeiro acesso (cadastro incompleto)
+  // Detectar se � primeiro acesso (cadastro incompleto)
     const isFirstAccess = (userData) => {
         return !userData.phone || !userData.address || !userData.cpf || !userData.date_of_birth || !userData.sex;
     };
@@ -98,6 +98,28 @@ export default function StudentProfile() {
         setValue('phone', formatted, { shouldValidate: true });
     };
 
+    const formatCep = (value) => {
+        const digits = (value || '').replace(/\D/g, '').slice(0, 8);
+        if (digits.length <= 5) return digits;
+        return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+    };
+
+    const handleCepChange = async (e) => {
+        const formatted = formatCep(e.target.value);
+        setValue('cep', formatted, { shouldValidate: true });
+        const digits = formatted.replace(/\D/g, '');
+        if (digits.length === 8) {
+            try {
+                const resp = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+                const data = await resp.json();
+                if (data && !data.erro) {
+                    setValue('address', data.logradouro || '');
+                    setValue('neighborhood', data.bairro || '');
+                }
+            } catch {}
+        }
+    };
+
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
@@ -105,7 +127,7 @@ export default function StudentProfile() {
                 const currentUser = await User.me();
                 setUser(currentUser);
                 
-                // Verificar se Ã© primeiro acesso - se sim, ativar modo de ediÃ§Ã£o automaticamente
+                // Verificar se é primeiro acesso - se sim, ativar modo de edição automaticamente
                 const firstAccess = isFirstAccess(currentUser);
                 setIsEditing(firstAccess);
                 
@@ -122,6 +144,9 @@ export default function StudentProfile() {
                     age: calculatedAge,
                     date_of_birth: currentUser.date_of_birth || "",
                     address: currentUser.address || "",
+                    cep: currentUser.cep ? formatCep(currentUser.cep) : "",
+                    address_number: currentUser.address_number || "",
+                    neighborhood: currentUser.neighborhood || "",
                     cpf: currentUser.cpf ? currentUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : "",
                     avatar_url: currentUser.avatar_url || "",
                     sex: currentUser.sex || "",
@@ -136,7 +161,7 @@ export default function StudentProfile() {
                 }
             } catch (err) {
                 console.error("Erro ao carregar dados do perfil:", err); // Corrigido
-                setError("NÃ£o foi possÃ­vel carregar seus dados. Tente novamente.");
+                setError("Não foi possível carregar seus dados. Tente novamente.");
             }
             setIsLoading(false);
         };
@@ -160,11 +185,11 @@ export default function StudentProfile() {
 
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
         if (!allowedTypes.includes(file.type)) { // Corrigido
-            setPhotoUploadError('Apenas imagens JPG ou PNG são permitidas.');
+            setPhotoUploadError('Apenas imagens JPG ou PNG s�o permitidas.');
             return;
         }
         if (file.size > 5 * 1024 * 1024) { // Corrigido
-            setPhotoUploadError('A imagem deve ter no máximo 5MB.');
+            setPhotoUploadError('A imagem deve ter no m�ximo 5MB.');
             return;
         }
         setIsUploadingPhoto(true);
@@ -203,7 +228,7 @@ export default function StudentProfile() {
 
         const cpfNumbers = data.cpf.replace(/\D/g, '');
         if (cpfNumbers.length !== 11) {
-            setError("CPF deve ter 11 dígitos.");
+            setError("CPF deve ter 11 d�gitos.");
             setIsSaving(false);
             return;
         }
@@ -229,6 +254,9 @@ export default function StudentProfile() {
                 block: data.block,
                 apartment: data.apartment,
                 address: data.address,
+                cep: data.cep ? data.cep.replace(/\D/g, '') : '',
+                address_number: data.address_number,
+                neighborhood: data.neighborhood,
                 cpf: cpfNumbers,
                 date_of_birth: data.date_of_birth,
                 sex: data.sex,
@@ -249,6 +277,9 @@ export default function StudentProfile() {
                 age: calculatedAge,
                 date_of_birth: updatedUser.date_of_birth || "",
                 address: updatedUser.address || "",
+                cep: updatedUser.cep ? formatCep(updatedUser.cep) : "",
+                address_number: updatedUser.address_number || "",
+                neighborhood: updatedUser.neighborhood || "",
                 cpf: updatedUser.cpf ? updatedUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : "",
                 avatar_url: updatedUser.avatar_url || "",
                 sex: updatedUser.sex || "",
@@ -260,7 +291,7 @@ export default function StudentProfile() {
             setTimeout(() => navigateTo('StudentDashboard', {}, true), 1200);
         } catch(err) {
             console.error("Erro ao salvar perfil:", err);
-            setError("Não foi possível salvar os dados. Tente novamente.");
+            setError("N�o foi poss�vel salvar os dados. Tente novamente.");
         } finally {
             setIsSaving(false);
         }
@@ -270,14 +301,14 @@ export default function StudentProfile() {
         setError("");
         setSuccess("");
         if (!inviteCode.trim()) {
-            setError("Por favor, insira um código de convite.");
+            setError("Por favor, insira um c�digo de convite.");
             return;
         }
 
         try {
             const condoList = await Condominium.filter({ invite_code: inviteCode.trim().toUpperCase() });
             if (condoList.length === 0) {
-                setError("Código de convite inválido ou não encontrado.");
+                setError("C�digo de convite inv�lido ou n�o encontrado.");
                 return;
             }
             const targetCondo = condoList[0];
@@ -287,11 +318,11 @@ export default function StudentProfile() {
             setUser(updatedUser);
             setCondominium(targetCondo);
             setInviteCode("");
-            setSuccess(`Você foi associado ao condomínio ${targetCondo.name}!`);
+            setSuccess(`Voc� foi associado ao condom�nio ${targetCondo.name}!`);
             setTimeout(() => setSuccess(""), 3000);
         } catch (err) {
-            console.error("Erro ao associar condomÃ­nio:", err);
-            setError("Ocorreu um erro ao tentar associar o condomÃ­nio. Tente novamente.");
+            console.error("Erro ao associar condomínio:", err);
+            setError("Ocorreu um erro ao tentar associar o condomínio. Tente novamente.");
         }
     };
 
@@ -301,32 +332,32 @@ export default function StudentProfile() {
             navigateTo(createPageUrl("Index")); // UPDATED navigateTo
         } catch (error) { // Corrigido
             console.error("Erro ao fazer logout:", error);
-            setError("NÃ£o foi possÃ­vel sair da conta. Tente novamente.");
+            setError("Não foi possível sair da conta. Tente novamente.");
         }
     };
     
     const handleDeleteAccount = async () => {
         if (!user) return;
 
-        if (window.confirm("ATENÇÃO: Esta ação é IRREVERSÍVEL. Você tem certeza que deseja excluir PERMANENTEMENTE sua conta e todos os seus dados (fichas, treinos, progresso)?")) {
+        if (window.confirm("ATEN��O: Esta a��o � IRREVERS�VEL. Voc� tem certeza que deseja excluir PERMANENTEMENTE sua conta e todos os seus dados (fichas, treinos, progresso)?")) {
             const confirmationText = 'EXCLUIR';
-            const userInput = window.prompt(`Para confirmar, digite "${confirmationText}" em maiúsculas:`);
+            const userInput = window.prompt(`Para confirmar, digite "${confirmationText}" em mai�sculas:`);
             
             if (userInput === confirmationText) {
                 setIsSaving(true); // Reutilizar o estado de 'salvando' para desativar a UI
                 setError("");
                 try {
                     await User.delete(user.id);
-                    await User.logout(); // Fazer logout após a exclusão bem-sucedida
-                    alert("Sua conta foi excluída com sucesso.");
+                    await User.logout(); // Fazer logout ap�s a exclus�o bem-sucedida
+                    alert("Sua conta foi exclu�da com sucesso.");
                     navigateTo(createPageUrl("Index"), { replace: true }); // UPDATED navigateTo
                 } catch (error) {
                     console.error("Erro ao excluir a conta:", error);
-                    setError("Não foi possível excluir sua conta. Se o problema persistir, entre em contato com o suporte.");
+                    setError("N�o foi poss�vel excluir sua conta. Se o problema persistir, entre em contato com o suporte.");
                     setIsSaving(false);
                 }
-            } else if(userInput !== null) { // Apenas mostrar alerta se o usuÃ¡rio digitou algo errado (e nÃ£o se apenas cancelou)
-                alert("ExclusÃ£o cancelada. A digitaÃ§Ã£o nÃ£o correspondeu.");
+            } else if(userInput !== null) { // Apenas mostrar alerta se o usuário digitou algo errado (e não se apenas cancelou)
+                alert("Exclusão cancelada. A digitação não correspondeu.");
             }
         }
     };
@@ -351,7 +382,7 @@ export default function StudentProfile() {
                     </div>
                     <div>
                         <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Meu Perfil</h1>
-                        <p className="text-gray-600 mt-1">Gerencie suas informações e preferências</p>
+                        <p className="text-gray-600 mt-1">Gerencie suas informa��es e prefer�ncias</p>
                     </div>
                 </div>
 
@@ -388,7 +419,7 @@ export default function StudentProfile() {
                                         )}
                                     </Avatar>
                                     
-                                    {/* Botão de upload de foto */}
+                                    {/* Bot�o de upload de foto */}
                                     <div className="absolute -bottom-2 -right-2">
                                         <input
                                             type="file"
@@ -426,7 +457,7 @@ export default function StudentProfile() {
                                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg w-full text-center">
                                     <p className="text-blue-700 text-sm flex items-center justify-center gap-2">
                                         <Camera className="h-4 w-4 flex-shrink-0" />
-                                        Clique no ícone da câmera para adicionar ou alterar sua foto de perfil (JPG/PNG, máx. 5MB)
+                                        Clique no �cone da c�mera para adicionar ou alterar sua foto de perfil (JPG/PNG, m�x. 5MB)
                                     </p>
                                 </div>
                             </div>
@@ -492,13 +523,13 @@ export default function StudentProfile() {
                                                 id="full_name"
                                                 name="full_name"
                                                 autoComplete="name"
-                                                {...register("full_name", { required: "Nome completo é obrigatório" })}
+                                                {...register("full_name", { required: "Nome completo � obrigat�rio" })}
                                                 className="border-orange-200"
                                             />
                                             {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
                                         </>
                                     ) : (
-                                        <p className="p-2 bg-gray-50 rounded border">{formData.full_name || "NÃ£o informado"}</p>
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.full_name || "Não informado"}</p>
                                     )}
                                 </div>
 
@@ -511,8 +542,8 @@ export default function StudentProfile() {
                                                 name="cpf"
                                                 autoComplete="off"
                                                 {...register("cpf", {
-                                                    required: "CPF é obrigatório",
-                                                    validate: value => validateCpf(value) || "CPF inválido"
+                                                    required: "CPF � obrigat�rio",
+                                                    validate: value => validateCpf(value) || "CPF inv�lido"
                                                 })}
                                                 onChange={handleCpfChange}
                                                 className="border-orange-200"
@@ -521,12 +552,12 @@ export default function StudentProfile() {
                                             {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf.message}</p>}
                                         </>
                                     ) : (
-                                        <p className="p-2 bg-gray-50 rounded border font-mono">{formData.cpf || "NÃ£o informado"}</p>
+                                        <p className="p-2 bg-gray-50 rounded border font-mono">{formData.cpf || "Não informado"}</p>
                                     )}
                                 </div>
                                 
                                 <div className="space-y-2">
-                                    <Label htmlFor="sex">Gênero</Label>
+                                    <Label htmlFor="sex">G�nero</Label>
                                     {isEditing ? (
                                         <>
                                             <Select
@@ -544,7 +575,7 @@ export default function StudentProfile() {
                                             {errors.sex && <p className="text-red-500 text-xs mt-1">{errors.sex.message}</p>}
                                         </>
                                     ) : (
-                                        <p className="p-2 bg-gray-50 rounded border">{formData.sex === 'male' ? 'Masculino' : formData.sex === 'female' ? 'Feminino' : "NÃ£o informado"}</p>
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.sex === 'male' ? 'Masculino' : formData.sex === 'female' ? 'Feminino' : "Não informado"}</p>
                                     )}
                                 </div>
 
@@ -559,12 +590,12 @@ export default function StudentProfile() {
                                                 autoComplete="bday"
                                                 type="date"
                                                 {...register("date_of_birth", { 
-                                                    required: "Data de nascimento é obrigatória",
+                                                    required: "Data de nascimento � obrigat�ria",
                                                     validate: (value) => {
                                                         const birthDate = new Date(value + 'T00:00:00');
                                                         const today = new Date();
-                                                        if (isNaN(birthDate.getTime())) return "Data de nascimento invÃ¡lida.";
-                                                        if (birthDate >= today) return "Data de nascimento deve ser anterior Ã  data atual.";
+                                                        if (isNaN(birthDate.getTime())) return "Data de nascimento inválida.";
+                                                        if (birthDate >= today) return "Data de nascimento deve ser anterior à data atual.";
                                                         return true;
                                                     }
                                                 })}
@@ -580,7 +611,7 @@ export default function StudentProfile() {
                                         </div>
                                     ) : (
                                         <p className="p-2 bg-gray-50 rounded border">
-                                            {formData.date_of_birth ? format(new Date(formData.date_of_birth + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR }) : "NÃ£o informado"}
+                                            {formData.date_of_birth ? format(new Date(formData.date_of_birth + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR }) : "Não informado"}
                                         </p>
                                     )}
                                 </div>
@@ -588,7 +619,7 @@ export default function StudentProfile() {
                                 <div className="space-y-2">
                                     <Label htmlFor="age">Idade</Label>
                                     <p className="p-2 bg-gray-100 rounded border text-gray-600">
-                                        {formData.age ? `${formData.age} anos` : "NÃ£o calculado"}
+                                        {formData.age ? `${formData.age} anos` : "Não calculado"}
                                     </p>
                                 </div>
 
@@ -601,34 +632,73 @@ export default function StudentProfile() {
                                                 id="phone"
                                                 name="phone"
                                                 autoComplete="tel"
-                                                {...register("phone", { required: "Telefone é obrigatório" })}
+                                                {...register("phone", { required: "Telefone � obrigat�rio" })}
                                                 onChange={handlePhoneChange}
                                                 className="border-orange-200 pl-10"
                                             />
                                             {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
                                         </div>
                                     ) : (
-                                        <p className="p-2 bg-gray-50 rounded border">{formData.phone || "NÃ£o informado"}</p>
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.phone || "Não informado"}</p>
                                     )}
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="cep">CEP *</Label>
+                                    {isEditing ? (
+                                        <>
+                                            <Input
+                                                id="cep"
+                                                name="cep"
+                                                autoComplete="postal-code"
+                                                {...register("cep", { required: "CEP � obrigat�rio" })}
+                                                onChange={handleCepChange}
+                                                onBlur={handleCepChange}
+                                                className="border-orange-200"
+                                                maxLength={9}
+                                            />
+                                            {errors.cep && <p className="text-red-500 text-xs mt-1">{errors.cep.message}</p>}
+                                        </>
+                                    ) : (
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.cep || "N�o informado"}</p>
+                                    )}
+                                </div>
                                 <div className="md:col-span-2 space-y-2">
-                                    <Label htmlFor="address">Endereço Completo</Label>
+                                    <Label htmlFor="address">Endere�o</Label>
                                     {isEditing ? (
                                         <>
                                             <Input
                                                 id="address"
                                                 name="address"
                                                 autoComplete="street-address"
-                                                {...register("address", { required: "Endereço é obrigatório" })}
+                                                {...register("address", { required: "Endere�o � obrigat�rio" })}
                                                 className="border-orange-200"
                                             />
                                             {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address.message}</p>}
                                         </>
                                     ) : (
-                                        <p className="p-2 bg-gray-50 rounded border">{formData.address || "Não informado"}</p>
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.address || "N�o informado"}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="address_number">N�mero</Label>
+                                    {isEditing ? (
+                                        <Input id="address_number" name="address_number" {...register("address_number", { required: "N�mero � obrigat�rio" })} className="border-orange-200" />
+                                    ) : (
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.address_number || "N�o informado"}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="neighborhood">Bairro</Label>
+                                    {isEditing ? (
+                                        <Input id="neighborhood" name="neighborhood" {...register("neighborhood", { required: "Bairro � obrigat�rio" })} className="border-orange-200" />
+                                    ) : (
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.neighborhood || "N�o informado"}</p>
                                     )}
                                 </div>
                                 <div className="space-y-2">
@@ -636,18 +706,22 @@ export default function StudentProfile() {
                                     {isEditing ? (
                                         <Input id="block" name="block" autoComplete="address-line2" {...register("block")} className="border-orange-200" />
                                     ) : (
-                                        <p className="p-2 bg-gray-50 rounded border">{formData.block || "Não informado"}</p>
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.block || "N�o informado"}</p>
                                     )}
                                 </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="apartment">Apartamento</Label>
                                     {isEditing ? (
                                         <Input id="apartment" name="apartment" autoComplete="address-line2" {...register("apartment")} className="border-orange-200" />
                                     ) : (
-                                        <p className="p-2 bg-gray-50 rounded border">{formData.apartment || "Não informado"}</p>
+                                        <p className="p-2 bg-gray-50 rounded border">{formData.apartment || "N�o informado"}</p>
                                     )}
                                 </div>
                             </div>
+
                         </CardContent>
                     </Card>
                     {isEditing && (
@@ -677,7 +751,7 @@ export default function StudentProfile() {
                             <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
                                 <span className="text-gray-600">PAR-Q Completo</span>
                                 <Badge className={user?.par_q_completed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                                    {user?.par_q_completed ? 'Sim' : 'Não'}
+                                    {user?.par_q_completed ? 'Sim' : 'N�o'}
                                 </Badge>
                             </div>
                             <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
@@ -692,7 +766,7 @@ export default function StudentProfile() {
                             <div className="p-3 bg-blue-50 border border-blue-200 rounded">
                                 <div className="flex items-center gap-2 mb-2">
                                     <FileText className="h-4 w-4 text-blue-600" />
-                                    <span className="font-medium text-blue-800">Atestado Médico</span>
+                                    <span className="font-medium text-blue-800">Atestado M�dico</span>
                                 </div>
                                 <p className="text-blue-700 text-sm mb-3">Documento anexado com sucesso</p>
                                 <Button size="sm" variant="outline" asChild>
@@ -708,7 +782,7 @@ export default function StudentProfile() {
                                      <FileText className="h-4 w-4 text-yellow-600" />
                                      <span className="font-medium text-yellow-800">PAR-Q Pendente</span>
                                  </div>
-                                 <p className="text-yellow-700 text-sm mb-3">Responda o questionÃ¡rio para ter acesso completo.</p>
+                                 <p className="text-yellow-700 text-sm mb-3">Responda o questionário para ter acesso completo.</p>
                                  <Button size="sm" variant="outline" className="border-yellow-300 text-yellow-800 hover:bg-yellow-100" onClick={() => navigateTo(createPageUrl("Parq"))}> {/* Updated to use navigateTo */}
                                          Preencher PAR-Q
                                  </Button>
@@ -717,7 +791,7 @@ export default function StudentProfile() {
                     </CardContent>
                 </Card>
 
-                {/* Associar Condomínio */}
+                {/* Associar Condom�nio */}
                 <Card className="border-orange-200 shadow-xl mb-6"> {/* Added mb-6 for spacing */}
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-orange-700">
@@ -745,12 +819,12 @@ export default function StudentProfile() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <p className="text-gray-600">Você ainda não está associado a um local de treino.</p>
+                                <p className="text-gray-600">Voc� ainda n�o est� associado a um local de treino.</p>
                                     <div className="flex gap-3">
                                         <Input
                                             id="invite_code"
                                             name="invite_code"
-                                            placeholder="Código de convite"
+                                            placeholder="C�digo de convite"
                                             value={inviteCode}
                                             onChange={(e) => setInviteCode(e.target.value)}
                                             className="border-orange-200"
@@ -780,3 +854,5 @@ export default function StudentProfile() {
         </div>
     );
 }
+
+

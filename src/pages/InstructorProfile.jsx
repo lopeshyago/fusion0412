@@ -15,7 +15,10 @@ export default function InstructorProfile() {
     full_name: "",
     phone: "",
     cpf: "",
+    cep: "",
     address: "",
+    address_number: "",
+    neighborhood: "",
     condominium_id: "",
     sex: "",
     date_of_birth: "",
@@ -38,6 +41,12 @@ export default function InstructorProfile() {
     return `(${part1}${part1.length === 2 ? ')' : ''}${middle}${end}`.trim();
   };
 
+  const formatCep = (value) => {
+    const digits = (value || "").replace(/\D/g, "").slice(0, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+  };
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -50,7 +59,10 @@ export default function InstructorProfile() {
           cpf: currentUser.cpf
             ? currentUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
             : "",
+          cep: currentUser.cep ? formatCep(currentUser.cep) : "",
           address: currentUser.address || "",
+          address_number: currentUser.address_number || "",
+          neighborhood: currentUser.neighborhood || "",
           condominium_id: currentUser.condominium_id || "",
           sex: currentUser.sex || "",
           date_of_birth: currentUser.date_of_birth || "",
@@ -79,6 +91,23 @@ export default function InstructorProfile() {
       setFormData((prev) => ({ ...prev, [id]: formatted }));
     } else if (id === "phone") {
       setFormData((prev) => ({ ...prev, [id]: formatPhone(value) }));
+    } else if (id === "cep") {
+      setFormData((prev) => ({ ...prev, [id]: formatCep(value) }));
+      const digits = value.replace(/\D/g, "");
+      if (digits.length === 8) {
+        fetch(`https://viacep.com.br/ws/${digits}/json/`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (data && !data.erro) {
+              setFormData((prev) => ({
+                ...prev,
+                address: data.logradouro || prev.address,
+                neighborhood: data.bairro || prev.neighborhood
+              }));
+            }
+          })
+          .catch(() => {});
+      }
     } else {
       setFormData((prev) => ({ ...prev, [id]: value }));
     }
@@ -91,8 +120,8 @@ export default function InstructorProfile() {
   const saveProfile = async () => {
     setError("");
     setSuccess("");
-    const { full_name, phone, address, cpf, condominium_id, sex, date_of_birth } = formData;
-    if (!full_name || !phone || !address || !cpf || !condominium_id || !sex || !date_of_birth) {
+    const { full_name, phone, address, cpf, condominium_id, sex, date_of_birth, cep, address_number, neighborhood } = formData;
+    if (!full_name || !phone || !address || !cpf || !condominium_id || !sex || !date_of_birth || !cep || !address_number || !neighborhood) {
       setError("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
@@ -203,7 +232,7 @@ export default function InstructorProfile() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="sex">Gênero *</Label>
+              <Label htmlFor="sex">Genero *</Label>
               <Select value={formData.sex} onValueChange={(value) => handleSelectChange("sex", value)}>
                 <SelectTrigger id="sex" className="w-full mt-1">
                   <SelectValue placeholder="Selecione..." />
@@ -215,7 +244,7 @@ export default function InstructorProfile() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="condominium_id">Selecione seu Condomínio *</Label>
+              <Label htmlFor="condominium_id">Selecione seu Condominio *</Label>
               <Select value={formData.condominium_id} onValueChange={(value) => handleSelectChange("condominium_id", value)}>
                 <SelectTrigger id="condominium_id" className="w-full mt-1">
                   <SelectValue placeholder="Selecione..." />
@@ -231,12 +260,28 @@ export default function InstructorProfile() {
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="address">Endereço Completo *</Label>
-            <Input id="address" value={formData.address} onChange={handleInputChange} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="cep">CEP *</Label>
+              <Input id="cep" value={formData.cep} onChange={handleInputChange} maxLength={9} />
+            </div>
+            <div>
+              <Label htmlFor="address">Endereco *</Label>
+              <Input id="address" value={formData.address} onChange={handleInputChange} />
+            </div>
           </div>
 
-          <Button onClick={saveProfile} className="w-full fusion-gradient">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="address_number">Numero *</Label>
+              <Input id="address_number" value={formData.address_number} onChange={handleInputChange} />
+            </div>
+            <div>
+              <Label htmlFor="neighborhood">Bairro *</Label>
+              <Input id="neighborhood" value={formData.neighborhood} onChange={handleInputChange} />
+            </div>
+          </div>
+<Button onClick={saveProfile} className="w-full fusion-gradient">
             <Save className="h-4 w-4 mr-2" />
             Salvar Perfil e Acessar Painel
           </Button>
@@ -245,3 +290,4 @@ export default function InstructorProfile() {
     </div>
   );
 }
+
