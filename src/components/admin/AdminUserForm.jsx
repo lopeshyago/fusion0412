@@ -40,6 +40,7 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
       setValue('full_name', user.full_name || '');
       setValue('email', user.email || '');
       setValue('phone', formatPhone(user.phone || ''));
+      setValue('emergency_phone', formatPhone(user.emergency_phone || ''));
       setValue('cpf', user.cpf || '');
       setValue('date_of_birth', user.date_of_birth || '');
       setValue('block', user.block || '');
@@ -59,6 +60,7 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
         full_name: data.full_name || '',
         email: user ? (user.email || '') : (data.email || ''),
         phone: phoneDigits,
+        emergency_phone: data.emergency_phone ? data.emergency_phone.replace(/\D/g, '') : '',
         cpf: data.cpf || '',
         date_of_birth: data.date_of_birth || null,
         block: data.block || '',
@@ -111,6 +113,15 @@ export default function AdminUserForm({ isOpen, onOpenChange, user, onSave }) {
               autoComplete="tel"
               {...register('phone')}
               onChange={(e) => setValue('phone', formatPhone(e.target.value))}
+            />
+          </div>
+          <div>
+            <Label htmlFor="emergency_phone">Telefone de Emergencia</Label>
+            <Input
+              id="emergency_phone"
+              autoComplete="tel"
+              {...register('emergency_phone')}
+              onChange={(e) => setValue('emergency_phone', formatPhone(e.target.value))}
             />
           </div>
           <div>

@@ -17,6 +17,7 @@ export default function InstructorRegistration() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
+  const [emergencyPhone, setEmergencyPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,23 +32,38 @@ export default function InstructorRegistration() {
     return `(${part1}${part1.length === 2 ? ')' : ''}${middle}${end}`.trim();
   };
 
+  const formatCpf = (value) => {
+    const digits = (value || "").replace(/\D/g, '').slice(0, 11);
+    return digits
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})/, "$1-$2")
+      .replace(/(-\d{2})\d+?$/, "$1");
+  };
+
   const handleBackToMenu = () => {
     window.location.href = createPageUrl('Index');
   };
 
   const handleRegister = async () => {
-    if (!inviteCode.trim() || !email || !password || !fullName || !dateOfBirth || !cpf || !phone) {
+    const cpfDigits = cpf.replace(/\D/g, '');
+    if (!inviteCode.trim() || !email || !password || !fullName || !dateOfBirth || !cpfDigits || !phone || !emergencyPhone) {
       setError("Preencha todos os campos.");
+      return;
+    }
+    if (cpfDigits.length !== 11) {
+      setError("CPF deve ter 11 digitos.");
       return;
     }
     setIsLoading(true);
     setError("");
     try {
       const phoneDigits = phone.replace(/\D/g, '');
+      const emergencyPhoneDigits = emergencyPhone.replace(/\D/g, '');
       const res = await localApi.request("/register/instructor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name: fullName, invite_code: inviteCode.trim(), date_of_birth: dateOfBirth, cpf, phone: phoneDigits })
+        body: JSON.stringify({ email, password, full_name: fullName, invite_code: inviteCode.trim(), date_of_birth: dateOfBirth, cpf: cpfDigits, phone: phoneDigits, emergency_phone: emergencyPhoneDigits })
       });
       if (res?.token) {
         localApi.setToken(res.token);
@@ -55,7 +71,7 @@ export default function InstructorRegistration() {
       window.location.href = createPageUrl("InstructorProfile");
     } catch (err) {
       console.error("Erro ao cadastrar instrutor:", err);
-      setError(err.message || "Falha ao cadastrar. Verifique os dados.");
+      setError("Falha ao cadastrar. Verifique codigo de convite e dados (CPF com 11 digitos).");
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +97,7 @@ export default function InstructorRegistration() {
           <CardHeader className="text-center">
             <KeyRound className="h-12 w-12 mx-auto mb-4 text-orange-500" />
             <CardTitle className="text-2xl font-bold">Cadastro de Instrutor</CardTitle>
-            <CardDescription>Informe seus dados e o código de convite.</CardDescription>
+            <CardDescription>Informe seus dados e o codigo de convite.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
@@ -95,7 +111,14 @@ export default function InstructorRegistration() {
             </div>
             <div className="space-y-2">
               <Label>CPF</Label>
-              <Input value={cpf} onChange={(e) => setCpf(e.target.value)} className="border-orange-200" />
+              <Input
+                value={cpf}
+                onChange={(e) => setCpf(formatCpf(e.target.value))}
+                className="border-orange-200"
+                maxLength={14}
+                autoComplete="off"
+                placeholder="000.000.000-00"
+              />
             </div>
             <div className="space-y-2">
               <Label>E-mail</Label>
@@ -112,6 +135,16 @@ export default function InstructorRegistration() {
               />
             </div>
             <div className="space-y-2">
+              <Label>Telefone de Emergencia</Label>
+              <Input
+                value={emergencyPhone}
+                onChange={(e) => setEmergencyPhone(formatPhone(e.target.value))}
+                className="border-orange-200"
+                autoComplete="tel"
+                placeholder="(11) 90000-0000"
+              />
+            </div>
+            <div className="space-y-2">
               <Label>Data de Nascimento</Label>
               <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="border-orange-200" />
             </div>
@@ -120,7 +153,7 @@ export default function InstructorRegistration() {
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="border-orange-200" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="inviteCode">Código de Convite</Label>
+              <Label htmlFor="inviteCode">Codigo de Convite</Label>
               <Input id="inviteCode" placeholder="FUSION-INST-XXXX" value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} className="border-orange-200 text-center tracking-widest" />
             </div>
             <Button onClick={handleRegister} disabled={isLoading} className="w-full bg-orange-500 hover:bg-orange-600">

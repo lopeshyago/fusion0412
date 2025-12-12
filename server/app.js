@@ -78,6 +78,7 @@ async function ensureSchemaColumns() {
     if (!uNames.has('user_type')) await runSql('ALTER TABLE users ADD COLUMN user_type TEXT');
     if (!uNames.has('cpf')) await runSql('ALTER TABLE users ADD COLUMN cpf TEXT');
     if (!uNames.has('phone')) await runSql('ALTER TABLE users ADD COLUMN phone TEXT');
+    if (!uNames.has('emergency_phone')) await runSql('ALTER TABLE users ADD COLUMN emergency_phone TEXT');
     if (!uNames.has('plan_status')) await runSql("ALTER TABLE users ADD COLUMN plan_status TEXT DEFAULT 'active'");
     if (!uNames.has('address')) await runSql('ALTER TABLE users ADD COLUMN address TEXT');
     if (!uNames.has('par_q_completed')) await runSql('ALTER TABLE users ADD COLUMN par_q_completed INTEGER DEFAULT 0');
@@ -152,6 +153,17 @@ async function ensureSchemaColumns() {
     if (!wsNames.has('color')) await runSql('ALTER TABLE weekly_schedules ADD COLUMN color TEXT');
 
     // instructor_invites columns
+    await runSql(
+      `CREATE TABLE IF NOT EXISTS instructor_invites (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT,
+        invited_by INTEGER,
+        status TEXT,
+        code TEXT,
+        expires_at TEXT,
+        created_at TEXT
+      )`
+    );
     const iiCols = await allSql('PRAGMA table_info(instructor_invites)');
     const iiNames = new Set(iiCols.map(c => c.name));
     if (!iiNames.has('email')) await runSql("ALTER TABLE instructor_invites ADD COLUMN email TEXT DEFAULT '' NOT NULL");
@@ -162,6 +174,17 @@ async function ensureSchemaColumns() {
     if (!iiNames.has('created_at')) await runSql('ALTER TABLE instructor_invites ADD COLUMN created_at TEXT');
 
     // admin_invites columns
+    await runSql(
+      `CREATE TABLE IF NOT EXISTS admin_invites (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT,
+        type TEXT,
+        expires_at TEXT,
+        status TEXT,
+        created_by INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`
+    );
     const aiCols = await allSql('PRAGMA table_info(admin_invites)');
     const aiNames = new Set(aiCols.map(c => c.name));
     if (!aiNames.has('code')) await runSql('ALTER TABLE admin_invites ADD COLUMN code TEXT');
@@ -211,12 +234,12 @@ ensureSchemaColumns();
 // Admin create user
 app.post('/admin/users', authMiddleware, async (req, res) => {
   try {
-    const { email, full_name, phone, user_type, condominium_id, cpf, date_of_birth, block, apartment } = req.body || {};
+    const { email, full_name, phone, emergency_phone, user_type, condominium_id, cpf, date_of_birth, block, apartment } = req.body || {};
     if (!email) return res.status(400).json({ error: 'email required' });
     const hashed = bcrypt.hashSync('123456', 10);
     const r = await runSql(
-      'INSERT INTO users (email, password_hash, user_type, phone, cpf, condominium_id, date_of_birth, block, apartment) VALUES (?,?,?,?,?,?,?,?,?)',
-      [email, hashed, user_type || 'student', phone || null, cpf || null, condominium_id || null, date_of_birth || null, block || null, apartment || null]
+      'INSERT INTO users (email, password_hash, user_type, phone, emergency_phone, cpf, condominium_id, date_of_birth, block, apartment) VALUES (?,?,?,?,?,?,?,?,?,?)',
+      [email, hashed, user_type || 'student', phone || null, emergency_phone || null, cpf || null, condominium_id || null, date_of_birth || null, block || null, apartment || null]
     ); // Adicionado 'cpf'
     const userId = r.lastID;
     await runSql('INSERT INTO profiles (user_id, full_name, role) VALUES (?,?,?)', [userId, full_name || null, (user_type === 'admin' ? 'admin' : (user_type === 'instructor' ? 'instrutor' : 'aluno'))]);
@@ -253,13 +276,15 @@ app.post('/auth/register', async (req, res) => {
 // Student/Instructor registration
 app.post('/register/student', async (req, res) => {
   try {
-    const { email, password, full_name, condo_code, date_of_birth, guardian_name, guardian_contact, doctor_name, doctor_crm } = req.body || {};
+    const { email, password, full_name, condo_code, date_of_birth, guardian_name, guardian_contact, doctor_name, doctor_crm, phone, emergency_phone, cpf, block, apartment } = req.body || {};
     if (!email || !password || !condo_code) return res.status(400).json({ error: 'Missing fields' });
     const condo = await getSql('SELECT id FROM condominiums WHERE invite_code = ?', [condo_code]);
     if (!condo) return res.status(400).json({ error: 'Invalid condominium code' });
     const hashed = bcrypt.hashSync(password, 10);
-    const r = await runSql('INSERT INTO users (email, password_hash, user_type, condominium_id, date_of_birth, guardian_name, guardian_contact, doctor_name, doctor_crm) VALUES (?,?,?,?,?,?,?,?,?)', 
-      [email, hashed, 'student', condo.id, date_of_birth, guardian_name, guardian_contact, doctor_name, doctor_crm]);
+    const r = await runSql(
+      'INSERT INTO users (email, password_hash, user_type, condominium_id, date_of_birth, guardian_name, guardian_contact, doctor_name, doctor_crm, phone, emergency_phone, cpf, block, apartment) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [email, hashed, 'student', condo.id, date_of_birth, guardian_name, guardian_contact, doctor_name, doctor_crm, phone || null, emergency_phone || null, cpf || null, block || null, apartment || null]
+    );
     const userId = r.lastID;
     await runSql('INSERT INTO profiles (user_id, full_name, role) VALUES (?,?,?)', [userId, full_name || null, 'aluno']);
     const token = generateToken({ id: userId, email, role: 'aluno', user_type: 'student' });
@@ -269,13 +294,15 @@ app.post('/register/student', async (req, res) => {
 
 app.post('/register/instructor', async (req, res) => {
   try {
-    const { email, password, full_name, invite_code, date_of_birth, cpf } = req.body || {};
+    const { email, password, full_name, invite_code, date_of_birth, cpf, phone, emergency_phone } = req.body || {};
     if (!email || !password || !invite_code) return res.status(400).json({ error: 'Missing fields' });
     const invite = await getSql('SELECT id, status FROM instructor_invites WHERE code = ?', [invite_code]);
     if (!invite || invite.status !== 'pending') return res.status(400).json({ error: 'Invalid or used invite' });
     const hashed = bcrypt.hashSync(password, 10);
-    const r = await runSql('INSERT INTO users (email, password_hash, user_type, date_of_birth, cpf) VALUES (?,?,?,?,?)', 
-      [email, hashed, 'instructor', date_of_birth || null, cpf || null]);
+    const r = await runSql(
+      'INSERT INTO users (email, password_hash, user_type, date_of_birth, cpf, phone, emergency_phone) VALUES (?,?,?,?,?,?,?)',
+      [email, hashed, 'instructor', date_of_birth || null, cpf || null, phone || null, emergency_phone || null]
+    );
     const userId = r.lastID;
     await runSql('INSERT INTO profiles (user_id, full_name, role) VALUES (?,?,?)', [userId, full_name || null, 'instrutor']);
     await runSql('UPDATE instructor_invites SET status = ? WHERE id = ?', ['used', invite.id]);
@@ -367,7 +394,7 @@ app.get('/api/:table', authMiddleware, async (req, res) => {
 // Admin: full users listing with profile join
 app.get('/admin/users_full', authMiddleware, async (_req, res) => {
   try {
-    const rows = await allSql('SELECT u.id,u.email,u.user_type,u.phone,u.cpf,u.condominium_id,p.full_name,p.avatar_url,p.role,p.sex FROM users u LEFT JOIN profiles p ON p.user_id=u.id ORDER BY u.id DESC');
+    const rows = await allSql('SELECT u.id,u.email,u.user_type,u.phone,u.emergency_phone,u.cpf,u.condominium_id,p.full_name,p.avatar_url,p.role,p.sex FROM users u LEFT JOIN profiles p ON p.user_id=u.id ORDER BY u.id DESC');
     res.json(rows);
   } catch (e) { console.error(e); res.status(500).json({ error: 'failed' }); }
 });
@@ -470,7 +497,7 @@ app.put('/api/:table/:id', authMiddleware, async (req, res) => {
     const data = req.body || {};
 
     if (table === 'users') {
-      const userAllowed = ['user_type','cpf','phone','plan_status','address','par_q_completed','par_q_has_risk','medical_certificate_url','medical_certificate_required_date','condominium_id','account_blocked'];
+      const userAllowed = ['user_type','cpf','phone','emergency_phone','plan_status','address','par_q_completed','par_q_has_risk','medical_certificate_url','medical_certificate_required_date','condominium_id','account_blocked'];
       const profileAllowed = ['full_name','avatar_url','role'];
       const userUpdates = Object.fromEntries(Object.entries(data).filter(([k]) => userAllowed.includes(k)));
       const profileUpdates = Object.fromEntries(Object.entries(data).filter(([k]) => profileAllowed.includes(k)));
@@ -573,6 +600,7 @@ app.get('/me', authMiddleware, async (req, res) => {
       u.email,
       u.user_type,
       u.phone,
+      u.emergency_phone,
       u.cpf,
       u.address,
       u.condominium_id,
@@ -609,7 +637,7 @@ app.put('/profile', authMiddleware, async (req, res) => {
     } catch (e) {
       console.warn('Falha ao garantir coluna sex em profiles:', e?.message);
     }
-    const userAllowed = ['user_type','cpf','phone','plan_status','address','par_q_completed','par_q_has_risk','medical_certificate_url','medical_certificate_required_date','condominium_id','account_blocked', 'date_of_birth', 'block', 'apartment', 'guardian_name', 'guardian_contact', 'doctor_name', 'doctor_crm'];
+    const userAllowed = ['user_type','cpf','phone','emergency_phone','plan_status','address','par_q_completed','par_q_has_risk','medical_certificate_url','medical_certificate_required_date','condominium_id','account_blocked', 'date_of_birth', 'block', 'apartment', 'guardian_name', 'guardian_contact', 'doctor_name', 'doctor_crm'];
     const profileAllowed = ['full_name','avatar_url','role','sex'];
     const userUpdates = Object.fromEntries(Object.entries(data).filter(([k]) => userAllowed.includes(k)));
     const profileUpdates = Object.fromEntries(Object.entries(data).filter(([k]) => profileAllowed.includes(k)));

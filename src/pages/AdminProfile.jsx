@@ -71,6 +71,13 @@ export default function AdminProfile() {
   const handleSave = async () => {
     setSaving(true); setError(''); setOk('');
     try {
+      const requiredFields = ['full_name', 'phone', 'cpf', 'address'];
+      for (const f of requiredFields) {
+        if (!form[f] || String(form[f]).trim() === '') {
+          throw new Error('Preencha todos os campos obrigatórios.');
+        }
+      }
+
       const { User } = await import('@/api/entities_new');
       let avatarUrl = form.avatar_url;
       if (avatarFile) {
@@ -94,10 +101,22 @@ export default function AdminProfile() {
         plan_status: 'active',
         user_type: 'admin'
       });
+
+      const updated = await User.me();
+      const normalized = {
+        full_name: updated?.full_name || '',
+        phone: formatPhone(updated?.phone || ''),
+        avatar_url: updated?.avatar_url || '',
+        cpf: updated?.cpf ? updated.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : '',
+        address: updated?.address || '',
+        email: updated?.email || ''
+      };
+      setForm(normalized);
+      setAvatarPreview(normalized.avatar_url);
       setOk('Perfil atualizado com sucesso.');
-      setTimeout(() => navigateTo('AdminDashboard'), 1000);
+      setTimeout(() => navigateTo('AdminDashboard'), 800);
     } catch (e) {
-      setError('Não foi possível salvar as alterações.');
+      setError(e?.message || 'Não foi possível salvar as alterações.');
     } finally {
       setSaving(false);
     }

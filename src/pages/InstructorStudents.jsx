@@ -94,7 +94,7 @@ export default function InstructorStudents() {
       setStudents(allStudents); // Mostra todos
     } else {
       // Filtra a lista principal de alunos com base no ID do condomínio selecionado
-      setStudents(allStudents.filter(s => s.condominium_id === condoId));
+      setStudents(allStudents.filter(s => String(s.condominium_id) === String(condoId)));
     }
   };
 
@@ -175,9 +175,9 @@ export default function InstructorStudents() {
                 {condominiums
                   .sort((a, b) => a.name.localeCompare(b.name))
                   .map(condo => {
-                    const count = allStudents.filter(s => s.condominium_id === condo.id).length;
+                    const count = allStudents.filter(s => String(s.condominium_id) === String(condo.id)).length;
                     return (
-                      <SelectItem key={condo.id} value={condo.id}>
+                      <SelectItem key={condo.id} value={String(condo.id)}>
                         {condo.name} ({count})
                       </SelectItem>
                     );

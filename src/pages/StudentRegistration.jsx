@@ -20,6 +20,7 @@ export default function StudentRegistration() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [emergencyPhone, setEmergencyPhone] = useState('');
   const [condoCode, setCondoCode] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [cpf, setCpf] = useState('');
@@ -57,7 +58,7 @@ export default function StudentRegistration() {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!email || !password || !fullName || !condoCode || !dateOfBirth || !cpf || !phone) {
+    if (!email || !password || !fullName || !condoCode || !dateOfBirth || !cpf || !phone || !emergencyPhone) {
       setError('Preencha todos os campos obrigatórios.');
       return;
     }
@@ -77,6 +78,7 @@ export default function StudentRegistration() {
           condo_code: condoCode,
           date_of_birth: dateOfBirth,
           phone: phone.replace(/\D/g, ''),
+          emergency_phone: emergencyPhone.replace(/\D/g, ''),
           cpf,
           block,
           apartment,
@@ -143,6 +145,16 @@ export default function StudentRegistration() {
                 <Input
                   value={phone}
                   onChange={e => setPhone(formatPhone(e.target.value))}
+                  className="border-orange-200"
+                  autoComplete="tel"
+                  placeholder="(11) 90000-0000"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Telefone de Emergencia</Label>
+                <Input
+                  value={emergencyPhone}
+                  onChange={e => setEmergencyPhone(formatPhone(e.target.value))}
                   className="border-orange-200"
                   autoComplete="tel"
                   placeholder="(11) 90000-0000"
