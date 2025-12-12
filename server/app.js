@@ -160,6 +160,7 @@ async function ensureSchemaColumns() {
         invited_by INTEGER,
         status TEXT,
         code TEXT,
+        condominium_id INTEGER,
         expires_at TEXT,
         created_at TEXT
       )`
@@ -170,6 +171,7 @@ async function ensureSchemaColumns() {
     if (!iiNames.has('invited_by')) await runSql('ALTER TABLE instructor_invites ADD COLUMN invited_by INTEGER');
     if (!iiNames.has('status')) await runSql('ALTER TABLE instructor_invites ADD COLUMN status TEXT');
     if (!iiNames.has('code')) await runSql('ALTER TABLE instructor_invites ADD COLUMN code TEXT');
+    if (!iiNames.has('condominium_id')) await runSql('ALTER TABLE instructor_invites ADD COLUMN condominium_id INTEGER');
     if (!iiNames.has('expires_at')) await runSql('ALTER TABLE instructor_invites ADD COLUMN expires_at TEXT');
     if (!iiNames.has('created_at')) await runSql('ALTER TABLE instructor_invites ADD COLUMN created_at TEXT');
 
@@ -296,16 +298,26 @@ app.post('/register/instructor', async (req, res) => {
   try {
     const { email, password, full_name, invite_code, date_of_birth, cpf, phone, emergency_phone } = req.body || {};
     if (!email || !password || !invite_code) return res.status(400).json({ error: 'Missing fields' });
-    const invite = await getSql('SELECT id, status FROM instructor_invites WHERE code = ?', [invite_code]);
-    if (!invite || invite.status !== 'pending') return res.status(400).json({ error: 'Invalid or used invite' });
+
+    const invite = await getSql('SELECT id, status, condominium_id FROM instructor_invites WHERE code = ?', [invite_code]);
+    let condoId = invite?.condominium_id || null;
+
+    if (!invite) {
+      const condo = await getSql('SELECT id FROM condominiums WHERE invite_code = ?', [invite_code]);
+      if (!condo) return res.status(400).json({ error: 'Invalid or used invite' });
+      condoId = condo.id;
+    } else if (invite.status !== 'pending') {
+      return res.status(400).json({ error: 'Invalid or used invite' });
+    }
+
     const hashed = bcrypt.hashSync(password, 10);
     const r = await runSql(
-      'INSERT INTO users (email, password_hash, user_type, date_of_birth, cpf, phone, emergency_phone) VALUES (?,?,?,?,?,?,?)',
-      [email, hashed, 'instructor', date_of_birth || null, cpf || null, phone || null, emergency_phone || null]
+      'INSERT INTO users (email, password_hash, user_type, date_of_birth, cpf, phone, emergency_phone, condominium_id) VALUES (?,?,?,?,?,?,?,?)',
+      [email, hashed, 'instructor', date_of_birth || null, cpf || null, phone || null, emergency_phone || null, condoId]
     );
     const userId = r.lastID;
     await runSql('INSERT INTO profiles (user_id, full_name, role) VALUES (?,?,?)', [userId, full_name || null, 'instrutor']);
-    await runSql('UPDATE instructor_invites SET status = ? WHERE id = ?', ['used', invite.id]);
+    if (invite) await runSql('UPDATE instructor_invites SET status = ? WHERE id = ?', ['used', invite.id]);
     const token = generateToken({ id: userId, email, role: 'instrutor', user_type: 'instructor' });
     res.json({ token, user: { id: userId, email, role: 'instrutor', user_type: 'instructor' } });
   } catch (e) { console.error(e); res.status(500).json({ error: 'instructor register failed' }); }
