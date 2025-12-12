@@ -291,7 +291,13 @@ app.post('/register/student', async (req, res) => {
     await runSql('INSERT INTO profiles (user_id, full_name, role) VALUES (?,?,?)', [userId, full_name || null, 'aluno']);
     const token = generateToken({ id: userId, email, role: 'aluno', user_type: 'student' });
     res.json({ token, user: { id: userId, email, role: 'aluno', user_type: 'student' } });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'student register failed' }); }
+  } catch (e) {
+    console.error(e);
+    if (String(e?.message || '').includes('UNIQUE constraint failed: users.email')) {
+      return res.status(400).json({ error: 'Email já cadastrado' });
+    }
+    res.status(500).json({ error: 'Não foi possível concluir o cadastro do aluno.' });
+  }
 });
 
 app.post('/register/instructor', async (req, res) => {

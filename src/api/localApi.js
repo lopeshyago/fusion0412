@@ -54,8 +54,19 @@ class LocalApiClient {
     const response = await fetch(url, config);
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`API Error: ${response.status} - ${error}`);
+      let message = 'Não foi possível completar a solicitação.';
+      try {
+        const data = await response.json();
+        if (data && typeof data === 'object') {
+          message = data.error || data.message || message;
+        }
+      } catch {
+        try {
+          const text = await response.text();
+          if (text) message = text;
+        } catch {}
+      }
+      throw new Error(message);
     }
 
     return response.json();

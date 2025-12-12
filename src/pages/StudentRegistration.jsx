@@ -91,9 +91,9 @@ export default function StudentRegistration() {
       if (res?.token) {
         localApi.setToken(res.token);
       }
-      navigateTo('StudentSetup', { replace: true });
+      navigateTo('StudentDashboard', { replace: true });
     } catch (e) {
-      setError(e.message || 'Falha no cadastro. Verifique os dados.');
+      setError(e?.message || 'Não foi possível concluir o cadastro. Confira os dados e tente novamente.');
     } finally {
       setLoading(false);
     }

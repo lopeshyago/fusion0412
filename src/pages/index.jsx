@@ -225,9 +225,11 @@ function PagesContent() {
 
                 <Route path="/StudentLogin" element={<StudentLogin />} />
 
-                <Route path="/AdminDashboard" element={<AdminDashboard />} />`r`n                <Route path="/AdminProfile" element={<AdminProfile />} />
+                <Route path="/AdminDashboard" element={<AdminDashboard />} />
+                <Route path="/AdminProfile" element={<AdminProfile />} />
 
                 <Route path="/StudentDashboard" element={<StudentDashboard />} />
+                <Route path="/studentsetup" element={<StudentDashboard />} />
 
                 <Route path="/instructordashboard" element={<InstructorDashboard />} />
 
